@@ -25,7 +25,7 @@
 # Installs Python dependencies into an isolated virtual environment.
 # This stage is discarded in the final image — only /opt/venv is copied.
 # =============================================================================
-FROM python:3.12-slim AS builder
+FROM python:3.14-slim AS builder
 
 # Install build-time system dependencies (C compiler, libpq headers)
 RUN apt-get update \
@@ -52,7 +52,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Minimal image — no build tools, no compilers, no dev packages.
 # Runs as non-root user travix (UID 1001).
 # =============================================================================
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 # Create non-root user before any other setup
 RUN groupadd --system --gid 1001 travix \

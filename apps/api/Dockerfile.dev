@@ -19,7 +19,7 @@
 #     -v $(pwd):/app travix-api:dev
 # =============================================================================
 
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 # Build-time system dependencies
 RUN apt-get update \
