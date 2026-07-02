@@ -1,0 +1,61 @@
+# =============================================================================
+# apps/api/.dockerignore
+#
+# Excludes files from the Docker build context for apps/api/.
+# An oversized build context causes slow builds and can accidentally include
+# secrets (.env files) in the image layer history.
+# =============================================================================
+
+# Virtual environments — never include in image
+.venv/
+venv/
+env/
+ENV/
+
+# Python byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Test and quality tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Distribution and build artifacts
+*.egg-info/
+dist/
+build/
+
+# Environment files — CRITICAL: must never enter the build context
+.env
+.env.*
+!.env.example
+
+# Development and editor files
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Test files — not needed in the runtime image
+tests/
+
+# Logs
+*.log
+logs/

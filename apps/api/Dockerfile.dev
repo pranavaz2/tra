@@ -1,0 +1,60 @@
+# =============================================================================
+# Travix AI — API Dockerfile (Development)
+#
+# Optimised for developer experience:
+#   - All dev dependencies installed (pytest, ruff, black, mypy, etc.)
+#   - Uvicorn runs with --reload for instant code changes
+#   - Source code is NOT copied — it is bind-mounted from the host by
+#     docker-compose.override.yml, so changes are reflected immediately
+#     without rebuilding the image
+#
+# This image is rebuilt only when pyproject.toml changes (dependency update).
+# All other changes are picked up via the volume mount.
+#
+# Build:
+#   docker build -f Dockerfile.dev -t travix-api:dev .
+#
+# Run (normally done via make docker-up / docker-compose):
+#   docker run -p 8000:8000 --env-file ../../.env \
+#     -v $(pwd):/app travix-api:dev
+# =============================================================================
+
+FROM python:3.12-slim
+
+# Build-time system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        libpq-dev \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+# Install ALL dependencies (runtime + dev extras) before mounting source.
+# This layer is cached until pyproject.toml changes.
+# Packages are installed to the system Python — the bind mount at /app
+# does not interfere because pip installs to site-packages, not /app.
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir ".[dev]"
+
+# Fallback source copy — overridden by the volume mount in docker-compose
+# so changes in the host are visible immediately without rebuild.
+COPY app/ ./app/
+
+EXPOSE 8000
+
+# Lighter health check interval for development (faster feedback)
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl --fail --silent http://localhost:8000/health || exit 1
+
+# --reload watches /app for file changes and restarts the server automatically
+CMD ["uvicorn", "app.main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8000", \
+     "--reload", \
+     "--reload-dir", "/app"]

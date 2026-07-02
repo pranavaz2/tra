@@ -1,0 +1,114 @@
+# =============================================================================
+# Travix AI — .gitattributes
+#
+# Controls Git behavior for line endings, diffs, and file handling.
+# Ensures consistent behavior across Windows, macOS, and Linux contributors.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Default: auto-detect text files and normalize to LF on checkout
+# ---------------------------------------------------------------------------
+* text=auto eol=lf
+
+# ---------------------------------------------------------------------------
+# Source code — always LF
+# ---------------------------------------------------------------------------
+*.dart          text eol=lf
+*.py            text eol=lf
+*.sh            text eol=lf
+*.bash          text eol=lf
+*.sql           text eol=lf
+*.graphql       text eol=lf
+
+# ---------------------------------------------------------------------------
+# Configuration and markup files
+# ---------------------------------------------------------------------------
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.json          text eol=lf
+*.toml          text eol=lf
+*.ini           text eol=lf
+*.cfg           text eol=lf
+*.md            text eol=lf
+*.rst           text eol=lf
+*.txt           text eol=lf
+*.xml           text eol=lf
+*.html          text eol=lf
+*.css           text eol=lf
+*.env           text eol=lf
+*.env.example   text eol=lf
+
+# ---------------------------------------------------------------------------
+# Docker
+# ---------------------------------------------------------------------------
+Dockerfile*     text eol=lf
+*.dockerfile    text eol=lf
+.dockerignore   text eol=lf
+
+# ---------------------------------------------------------------------------
+# Makefile — must use LF (tabs required)
+# ---------------------------------------------------------------------------
+Makefile        text eol=lf
+makefile        text eol=lf
+
+# ---------------------------------------------------------------------------
+# Windows-native scripts — CRLF on Windows checkout
+# (only include if Windows scripts are ever added to the project)
+# ---------------------------------------------------------------------------
+# *.bat         text eol=crlf
+# *.cmd         text eol=crlf
+# *.ps1         text eol=crlf
+
+# ---------------------------------------------------------------------------
+# Binary files — no line ending conversion, no diff
+# ---------------------------------------------------------------------------
+
+# Images
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.webp          binary
+*.svg           text eol=lf
+
+# Fonts
+*.ttf           binary
+*.otf           binary
+*.woff          binary
+*.woff2         binary
+
+# Documents
+*.pdf           binary
+
+# Android
+*.apk           binary
+*.aab           binary
+*.keystore      binary
+*.jks           binary
+
+# iOS
+*.ipa           binary
+*.mobileprovision binary
+*.p12           binary
+
+# Archives
+*.zip           binary
+*.tar           binary
+*.gz            binary
+*.tgz           binary
+
+# ---------------------------------------------------------------------------
+# GitHub Linguist — language classification for repository stats
+# ---------------------------------------------------------------------------
+apps/mobile/**  linguist-language=Dart
+apps/api/**     linguist-language=Python
+infrastructure/** linguist-language=Dockerfile
+docs/**         linguist-documentation=true
+*.md            linguist-documentation=true
+
+# ---------------------------------------------------------------------------
+# Git diff — use more useful diff drivers for specific file types
+# ---------------------------------------------------------------------------
+*.dart          diff=dart
+*.py            diff=python

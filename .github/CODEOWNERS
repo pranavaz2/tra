@@ -1,0 +1,60 @@
+# =============================================================================
+# Travix AI — CODEOWNERS
+#
+# Defines required reviewers for changes to specific paths.
+# GitHub automatically requests reviews from these owners when a PR modifies
+# files in the specified paths.
+#
+# Syntax: <pattern> <@owner or @org/team>
+# The last matching pattern takes precedence.
+#
+# TODO: Replace placeholder teams/users with real GitHub usernames or teams
+#       once the organization and team structure are established.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Global default — all files not matched below
+# ---------------------------------------------------------------------------
+*                                   @travix-ai/engineering
+
+# ---------------------------------------------------------------------------
+# Flutter mobile application
+# ---------------------------------------------------------------------------
+/apps/mobile/                       @travix-ai/mobile
+
+# ---------------------------------------------------------------------------
+# FastAPI backend
+# ---------------------------------------------------------------------------
+/apps/api/                          @travix-ai/backend
+
+# ---------------------------------------------------------------------------
+# Infrastructure (Docker, Compose, scripts)
+# ---------------------------------------------------------------------------
+/infrastructure/                    @travix-ai/infrastructure
+/.github/workflows/                 @travix-ai/infrastructure
+
+# ---------------------------------------------------------------------------
+# Database migrations — require backend + lead review
+# ---------------------------------------------------------------------------
+/apps/api/migrations/               @travix-ai/backend @travix-ai/lead
+
+# ---------------------------------------------------------------------------
+# Shared packages
+# ---------------------------------------------------------------------------
+/packages/                          @travix-ai/engineering
+
+# ---------------------------------------------------------------------------
+# Engineering documentation
+# ---------------------------------------------------------------------------
+/docs/                              @travix-ai/engineering
+/docs/adr/                          @travix-ai/lead
+/docs/product-bible/                @travix-ai/lead
+
+# ---------------------------------------------------------------------------
+# Root configuration files — require lead review
+# ---------------------------------------------------------------------------
+/CLAUDE.md                          @travix-ai/lead
+/.env.example                       @travix-ai/lead @travix-ai/infrastructure
+/Makefile                           @travix-ai/infrastructure
+/.pre-commit-config.yaml            @travix-ai/engineering
+/pyproject.toml                     @travix-ai/backend

@@ -1,0 +1,70 @@
+# =============================================================================
+# Travix AI — Local Development Override
+#
+# Extends docker-compose.yml for local development. Docker Compose merges this
+# file automatically when both files are present in the same directory.
+# Reference: https://docs.docker.com/compose/extends/
+#
+# Developer experience goals:
+#   - Source code changes are reflected instantly (no rebuild required)
+#   - Database and Redis ports are exposed on localhost for direct access
+#   - API runs with --reload so uvicorn restarts on file changes
+#   - All mock providers active — no live API keys needed
+#   - Environment loaded from the .env file at the repository root
+#
+# Usage:
+#   make docker-up            Starts all services in the background
+#   make docker-logs          Streams logs for all services
+#   make docker-down          Stops and removes containers
+#
+# Or directly:
+#   docker compose \
+#     -f infrastructure/compose/docker-compose.yml \
+#     -f infrastructure/compose/docker-compose.override.yml \
+#     up --build
+# =============================================================================
+
+version: "3.9"
+
+services:
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL — expose port 5432 on localhost for psql / DBeaver / migrations
+  # --------------------------------------------------------------------------
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # --------------------------------------------------------------------------
+  # Redis — expose port 6379 on localhost for redis-cli and direct inspection
+  # --------------------------------------------------------------------------
+  redis:
+    ports:
+      - "6379:6379"
+
+  # --------------------------------------------------------------------------
+  # Travix API — development mode
+  #
+  # Key differences from production:
+  #   - Built from local source via Dockerfile.dev (not the production image)
+  #   - Source code bind-mounted from the host — changes are reflected without
+  #     rebuilding the image (only rebuild when pyproject.toml changes)
+  #   - migrations/ directory mounted so `alembic upgrade head` reads the host
+  #   - Port 8000 exposed on localhost
+  #   - env_file loads all variables from the repository root .env
+  # --------------------------------------------------------------------------
+  api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind-mount source so --reload picks up changes immediately
+      - ../../apps/api/app:/app/app
+      # Bind-mount migrations so alembic reads the latest migration files
+      - ../../apps/api/migrations:/app/migrations
+      # Bind-mount alembic.ini so alembic can be run inside the container
+      - ../../apps/api/alembic.ini:/app/alembic.ini
+    env_file:
+      - ../../.env

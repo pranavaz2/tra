@@ -1,0 +1,109 @@
+Travix AI — Database Migrations
+================================
+
+All schema changes are managed with Alembic. Every migration is a Python file
+in ``migrations/versions/``. Run all commands from ``apps/api/``.
+
+
+Quick Reference
+---------------
+
+Apply all pending migrations:
+    alembic upgrade head
+
+Generate a new migration from ORM model changes:
+    alembic revision --autogenerate -m "describe what changed"
+
+Roll back one migration:
+    alembic downgrade -1
+
+Roll back to a specific revision:
+    alembic downgrade <revision_id>
+
+Show migration history:
+    alembic history --verbose
+
+Show current revision applied to the database:
+    alembic current
+
+Preview the SQL without applying it:
+    alembic upgrade head --sql
+
+Check that the DB schema matches the ORM models (CI gate):
+    alembic check
+
+
+Adding a New Model
+------------------
+
+1. Create the ORM model in ``app/modules/<module>/models.py``.
+2. Import the model in ``migrations/env.py`` under the "Import all models" section.
+3. Generate the migration:
+       alembic revision --autogenerate -m "add <table_name> table"
+4. Review the generated file in ``migrations/versions/``.
+5. Work through the migration checklist in the file header.
+6. Apply and verify locally:
+       alembic upgrade head
+
+
+Migration Checklist
+-------------------
+
+Every generated migration file contains a checklist. Before merging, verify:
+
+  [ ] Auto-generated DDL is correct (review column types, constraints, defaults)
+  [ ] GiST index added for every PostGIS geometry column
+  [ ] updated_at trigger added for every new table
+  [ ] soft-delete column (deleted_at) present for user-facing entities
+  [ ] ON DELETE behaviour declared on all foreign keys (CASCADE / SET NULL / RESTRICT)
+  [ ] downgrade() fully reverses upgrade() with no data loss (where possible)
+  [ ] Tested upgrade AND downgrade locally before committing
+
+
+Rules
+-----
+
+NEVER edit a migration file after it has been committed to the repository.
+A migration that has been applied to staging or production is immutable.
+If a migration contains an error, create a NEW migration that corrects it.
+
+NEVER use ``Base.metadata.create_all()`` or ``drop_all()`` in application code.
+These are reserved for test setup only (``tests/conftest.py``).
+
+NEVER squash or rebase migrations. The version history must be linear and
+complete for safe rollback in production.
+
+
+Local Development Setup
+-----------------------
+
+1. Start the database:
+       docker compose up postgres -d
+
+2. Apply all migrations:
+       alembic upgrade head
+
+3. After changing a model, generate a migration:
+       alembic revision --autogenerate -m "your description"
+
+
+PostGIS Geometry Columns
+------------------------
+
+Alembic does not auto-detect PostGIS geometry columns correctly. When adding
+a geometry column, write the migration manually using the postgis_ops module:
+
+    from geoalchemy2 import Geometry
+
+    op.add_column(
+        "destinations",
+        sa.Column("coordinates", Geometry("POINT", srid=4326), nullable=True),
+    )
+
+    # GiST index is REQUIRED for every geometry column (CLAUDE.md §10)
+    op.create_index(
+        "gix_destinations_coordinates",
+        "destinations",
+        ["coordinates"],
+        postgresql_using="gist",
+    )

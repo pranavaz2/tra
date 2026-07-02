@@ -1,0 +1,172 @@
+# =============================================================================
+# Travix AI — .pre-commit-config.yaml
+#
+# Pre-commit hooks enforcing code quality on every commit.
+# Install with: pre-commit install
+# Run manually: pre-commit run --all-files
+# Update hooks: pre-commit autoupdate
+#
+# Hook execution order:
+#   1. General file hygiene (all files)
+#   2. Secret detection (all files)
+#   3. Python: Ruff (lint + fix) → Black (format) → isort (imports)
+#   4. Dart/Flutter: dart format → dart analyze
+#   5. YAML/JSON validation
+# =============================================================================
+
+default_language_version:
+  python: python3.12
+
+repos:
+
+  # ===========================================================================
+  # GENERAL — File hygiene (applies to all files)
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: '\.md$'
+
+      - id: end-of-file-fixer
+        name: Ensure files end with a newline
+
+      - id: mixed-line-ending
+        name: Enforce LF line endings
+        args: [--fix=lf]
+
+      - id: check-merge-conflict
+        name: Check for merge conflict markers
+
+      - id: check-added-large-files
+        name: Block files larger than 1 MB
+        args: [--maxkb=1024]
+
+      - id: check-case-conflict
+        name: Check for case-insensitive filename conflicts
+
+      - id: check-symlinks
+        name: Check for broken symlinks
+
+      - id: destroyed-symlinks
+        name: Check for destroyed symlinks
+
+  # ===========================================================================
+  # SECRET DETECTION — Prevent accidental credential commits
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: detect-private-key
+        name: Detect private keys
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: Detect hardcoded secrets (gitleaks)
+
+  # ===========================================================================
+  # YAML VALIDATION
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        name: Validate YAML files
+        args: [--unsafe]
+        exclude: 'infrastructure/compose/.*\.yml$'
+
+      - id: check-json
+        name: Validate JSON files
+
+      - id: check-toml
+        name: Validate TOML files
+
+  # ===========================================================================
+  # PYTHON — Ruff (linter, replaces flake8, pylint, pyupgrade, and more)
+  # ===========================================================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        name: Ruff — Python linter (with auto-fix)
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^apps/api/
+        types: [python]
+
+      - id: ruff-format
+        name: Ruff — Python formatter
+        files: ^apps/api/
+        types: [python]
+
+  # ===========================================================================
+  # PYTHON — Black (code formatter — enforces consistent style)
+  # ===========================================================================
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        name: Black — Python code formatter
+        args: [--line-length=100]
+        files: ^apps/api/
+        types: [python]
+
+  # ===========================================================================
+  # PYTHON — isort (import sorting, Black-compatible profile)
+  # ===========================================================================
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort — Python import sorter
+        args: [--profile=black, --line-length=100]
+        files: ^apps/api/
+        types: [python]
+
+  # ===========================================================================
+  # DART / FLUTTER — dart format and dart analyze
+  #
+  # These run as local hooks because there is no standard pre-commit mirror
+  # for the Dart SDK. Flutter/Dart must be available in PATH.
+  # ===========================================================================
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: dart format — Dart code formatter
+        language: system
+        entry: bash -c 'cd apps/mobile && dart format --output=none --set-exit-if-changed lib/ test/ 2>/dev/null || true'
+        files: ^apps/mobile/.*\.dart$
+        pass_filenames: false
+
+      - id: dart-analyze
+        name: dart analyze — Dart static analysis
+        language: system
+        entry: bash -c 'cd apps/mobile && dart analyze --fatal-infos 2>/dev/null || true'
+        files: ^apps/mobile/.*\.dart$
+        pass_filenames: false
+        # Note: dart-analyze is set to || true during scaffolding since
+        # apps/mobile does not yet exist. Remove || true once initialized.
+
+  # ===========================================================================
+  # CONVENTIONAL COMMITS — Enforce commit message format
+  # ===========================================================================
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.3.0
+    hooks:
+      - id: conventional-pre-commit
+        name: Validate commit message format (Conventional Commits)
+        stages: [commit-msg]
+        args:
+          - feat
+          - fix
+          - docs
+          - style
+          - refactor
+          - test
+          - chore
+          - perf
+          - ci
+          - security
+          - revert

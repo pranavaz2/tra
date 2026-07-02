@@ -1,0 +1,144 @@
+# =============================================================================
+# Dependabot — Automated Dependency Updates
+#
+# Dependabot opens PRs to keep dependencies current. PRs target main and
+# are created on a weekly schedule to avoid PR noise.
+#
+# Grouping is applied per ecosystem to batch minor/patch updates into a single
+# PR rather than one per package.
+#
+# Auto-merge policy: Dependabot PRs for minor/patch updates are approved to
+# merge automatically once CI passes. Major version bumps require human review.
+# =============================================================================
+
+version: 2
+
+updates:
+  # ---------------------------------------------------------------------------
+  # Python — FastAPI backend (apps/api/)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "pip"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    groups:
+      python-runtime:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "gunicorn*"
+          - "pydantic*"
+          - "sqlalchemy*"
+          - "alembic*"
+          - "asyncpg*"
+          - "psycopg2*"
+          - "redis*"
+          - "arq*"
+          - "httpx*"
+          - "python-jose*"
+          - "passlib*"
+      python-observability:
+        patterns:
+          - "python-json-logger*"
+          - "sentry-sdk*"
+      python-dev-tools:
+        patterns:
+          - "pytest*"
+          - "black*"
+          - "ruff*"
+          - "isort*"
+          - "mypy*"
+          - "anyio*"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    ignore:
+      # SQLAlchemy major versions require migration — review manually
+      - dependency-name: "sqlalchemy"
+        update-types: ["version-update:semver-major"]
+      # FastAPI major versions may have breaking changes
+      - dependency-name: "fastapi"
+        update-types: ["version-update:semver-major"]
+      # Pydantic major versions have historically been very breaking
+      - dependency-name: "pydantic*"
+        update-types: ["version-update:semver-major"]
+
+  # ---------------------------------------------------------------------------
+  # Dart / Flutter — Mobile app (apps/mobile/)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "pub"
+    directory: "/apps/mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    groups:
+      flutter-core:
+        patterns:
+          - "riverpod*"
+          - "flutter_riverpod*"
+          - "hooks_riverpod*"
+          - "go_router*"
+          - "dio*"
+          - "drift*"
+          - "flutter_secure_storage*"
+      flutter-dev:
+        patterns:
+          - "build_runner*"
+          - "riverpod_generator*"
+          - "json_serializable*"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "flutter"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — CI/CD workflows (.github/workflows/)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+
+  # ---------------------------------------------------------------------------
+  # Docker — base image updates (apps/api/ Dockerfile)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"

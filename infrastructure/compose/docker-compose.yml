@@ -1,0 +1,162 @@
+# =============================================================================
+# Travix AI — Base Docker Compose Configuration
+#
+# This file defines the canonical service configuration shared across all
+# environments. It is NOT used directly — always use one of:
+#
+#   Local dev:   docker compose -f docker-compose.yml -f docker-compose.override.yml up
+#   Production:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+#
+# Environment variables are NOT hardcoded here. All secrets and configuration
+# come from the .env file (local dev) or injected secrets (production).
+#
+# Networks:
+#   travix-net  Internal bridge network. Services communicate by name.
+#               The API reaches PostgreSQL at "postgres:5432".
+#
+# Volumes:
+#   postgres-data   Persists PostgreSQL data directory across restarts.
+#   redis-data      Persists Redis AOF/RDB files across restarts.
+# =============================================================================
+
+version: "3.9"
+
+# ---------------------------------------------------------------------------
+# Named volumes
+# ---------------------------------------------------------------------------
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  travix-net:
+    driver: bridge
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL + PostGIS
+  #
+  # Uses the official PostGIS image which bundles PostgreSQL 16 and PostGIS 3.4.
+  # Health check: pg_isready confirms the server accepts connections on the
+  # correct port with the correct user before any dependent service starts.
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-travix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-travix}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - travix-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-travix} -d ${POSTGRES_DB:-travix} -p 5432",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --------------------------------------------------------------------------
+  # Redis
+  #
+  # Six logical databases are used by convention (see apps/api/app/redis.py):
+  #   DB 0 — General cache
+  #   DB 1 — ARQ task queue
+  #   DB 2 — Token revocation list  ← AOF required; loss = security vulnerability
+  #   DB 3 — Rate limiting counters
+  #   DB 4 — AI response cache
+  #   DB 5 — Session storage
+  #
+  # AOF (appendonly yes) is enabled globally because DB 2 (token revocation)
+  # requires durability. All other databases benefit from the same guarantee.
+  # RDB snapshots provide an additional recovery checkpoint.
+  #
+  # maxmemory-policy allkeys-lru is intentionally NOT set because token
+  # revocation entries must never be evicted. Use TTLs to control memory.
+  # --------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --save
+      - "900 1"
+      - --save
+      - "300 10"
+      - --save
+      - "60 10000"
+      - --loglevel
+      - notice
+    volumes:
+      - redis-data:/data
+    networks:
+      - travix-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --------------------------------------------------------------------------
+  # Travix API (FastAPI)
+  #
+  # Depends on both postgres and redis being healthy before starting.
+  # Environment variables are provided by the environment-specific override.
+  #
+  # The base configuration omits:
+  #   - Port bindings (added by override files)
+  #   - Volume mounts (added by override files for dev hot-reload)
+  #   - Image tag / build context (set by override files)
+  # --------------------------------------------------------------------------
+  api:
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_SYNC_URL: ${DATABASE_SYNC_URL:?DATABASE_SYNC_URL is required}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      MAPS_PROVIDER: ${MAPS_PROVIDER:-mock}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mock}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-mock}
+      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-mock}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    networks:
+      - travix-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

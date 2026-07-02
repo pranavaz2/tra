@@ -1,0 +1,58 @@
+# =============================================================================
+# apps/mobile/.dockerignore
+#
+# Excludes files from the Docker build context for apps/mobile/.
+# Used by any CI Docker image that builds the Flutter app (APK/IPA).
+# =============================================================================
+
+# Flutter build outputs — gigabytes, never include
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Package cache
+.pub/
+.pub-cache/
+.packages
+
+# Generated Dart files (regenerated during build)
+*.g.dart
+*.freezed.dart
+*.gr.dart
+
+# iOS build artifacts
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Android build artifacts
+android/.gradle/
+android/captures/
+android/local.properties
+android/key.properties
+android/**/*.jks
+
+# Environment files
+.env
+.env.*
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Logs
+*.log
+logs/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
