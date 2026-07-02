@@ -49,7 +49,7 @@ dependencies = [
     "httpx>=0.28.0,<1.0.0",
 
     # Password hashing — Argon2id (see ADR-004)
-    "argon2-cffi>=23.1.0,<25.0.0",
+    "argon2-cffi>=23.1.0,<26.0.0",
 
     # JWT — access token creation and validation (see ADR-003)
     # [cryptography] extra included for future RS256 migration path (ADR-003 §Migration).
