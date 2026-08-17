@@ -97,7 +97,7 @@ class StubPasswordHasher:
     """Always returns a fixed PasswordHash for any plaintext."""
 
     def hash(self, plain_password: str) -> PasswordHash:
-        return PasswordHash(value="$argon2id$stub$hash")
+        return PasswordHash(value="$argon2id$stub$hash$for$testing$purposes")
 
     def verify(self, plain_password: str, password_hash: PasswordHash) -> bool:
         return True

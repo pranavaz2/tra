@@ -87,7 +87,7 @@ class TestPasswordHashingBenchmark:
     """Argon2id hashing is intentionally slow — verify it stays within design bounds."""
 
     @pytest.mark.slow
-    async def test_argon2_hash_benchmark(self) -> None:
+    def test_argon2_hash_benchmark(self) -> None:
         """
         Argon2id hash time should be 50–500 ms per call on a developer machine.
         Above 500 ms per call suggests the parallelism/memory parameters were
@@ -100,8 +100,8 @@ class TestPasswordHashingBenchmark:
         hasher = Argon2PasswordHasher()
         password = "BenchmarkPassword123!"
 
-        avg_ms, total_ms = await _run_async_benchmark(
-            lambda: hasher.hash(password),  # type: ignore[return-value]
+        avg_ms, total_ms = _run_benchmark(
+            lambda: hasher.hash(password),
             iterations=3,  # Argon2 is slow by design — 3 iterations is enough
         )
 
@@ -112,7 +112,7 @@ class TestPasswordHashingBenchmark:
         )
 
     @pytest.mark.slow
-    async def test_argon2_verify_benchmark(self) -> None:
+    def test_argon2_verify_benchmark(self) -> None:
         """Argon2id verification should be comparable to hashing time."""
         from app.modules.identity.authentication.infrastructure.password_hasher import (
             Argon2PasswordHasher,
@@ -120,10 +120,10 @@ class TestPasswordHashingBenchmark:
 
         hasher = Argon2PasswordHasher()
         password = "BenchmarkPassword123!"
-        hashed = await hasher.hash(password)
+        hashed = hasher.hash(password)
 
-        avg_ms, _ = await _run_async_benchmark(
-            lambda: hasher.verify(password, hashed),  # type: ignore[return-value]
+        avg_ms, _ = _run_benchmark(
+            lambda: hasher.verify(password, hashed),
             iterations=3,
         )
 

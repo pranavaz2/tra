@@ -143,8 +143,10 @@ class Failure(Generic[E]):
 # Result[T] — the common case: success carries T, failure carries any TravixError
 # Used in most service and use-case return types.
 # Example: async def create_trip(...) -> Result[Trip]
-type Result[T] = Success[T] | Failure[TravixError]
+from typing import Any, TypeAlias
+
+Result: TypeAlias = "Success[Any] | Failure[TravixError]"
 
 # TypedResult[T, E] — when the error type should be precise for type narrowing.
 # Example: async def validate_email(...) -> TypedResult[str, ValidationError]
-type TypedResult[T, E: TravixError] = Success[T] | Failure[E]
+TypedResult: TypeAlias = "Success[Any] | Failure[Any]"

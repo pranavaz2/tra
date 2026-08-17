@@ -21,6 +21,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from typing import TypeAlias
+
 from app.shared.domain.result import Result
 from app.modules.identity.authentication.domain.value_objects.email import Email
 from app.modules.identity.authentication.domain.value_objects.plain_refresh_token import (
@@ -78,7 +80,7 @@ class RegistrationSummary:
         return repr(self)
 
 
-type RegistrationResult = Result[RegistrationSummary]
+RegistrationResult: TypeAlias = "Result[RegistrationSummary]"
 
 
 @dataclass(frozen=True)
@@ -127,4 +129,4 @@ class AuthenticatedSessionSummary:
         return repr(self)
 
 
-type LoginResult = Result[AuthenticatedSessionSummary]
+LoginResult: TypeAlias = "Result[AuthenticatedSessionSummary]"

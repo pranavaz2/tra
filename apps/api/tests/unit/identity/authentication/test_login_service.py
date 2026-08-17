@@ -636,7 +636,7 @@ class TestAccountDisabled:
 class TestAccountLocked:
     async def test_returns_account_locked_error(self) -> None:
         repo = InMemoryAuthRepository()
-        locked_until = _FIXED_NOW + timedelta(minutes=10)
+        locked_until = datetime.now(UTC) + timedelta(minutes=10)
         await repo.save(_make_active_credential(locked_until=locked_until))
         service, _, _ = _make_service(auth_repo=repo)
 
@@ -647,7 +647,7 @@ class TestAccountLocked:
 
     async def test_locked_error_carries_locked_until(self) -> None:
         repo = InMemoryAuthRepository()
-        locked_until = _FIXED_NOW + timedelta(minutes=10)
+        locked_until = datetime.now(UTC) + timedelta(minutes=10)
         await repo.save(_make_active_credential(locked_until=locked_until))
         service, _, _ = _make_service(auth_repo=repo)
 
@@ -660,7 +660,7 @@ class TestAccountLocked:
 
     async def test_locked_account_does_not_verify_password(self) -> None:
         repo = InMemoryAuthRepository()
-        locked_until = _FIXED_NOW + timedelta(minutes=10)
+        locked_until = datetime.now(UTC) + timedelta(minutes=10)
         await repo.save(_make_active_credential(locked_until=locked_until))
         service, _, _ = _make_service(auth_repo=repo, hasher=FailingHasherOnVerify())
 
@@ -671,7 +671,7 @@ class TestAccountLocked:
 
     async def test_publishes_login_attempt_failed_event(self) -> None:
         repo = InMemoryAuthRepository()
-        locked_until = _FIXED_NOW + timedelta(minutes=10)
+        locked_until = datetime.now(UTC) + timedelta(minutes=10)
         await repo.save(_make_active_credential(locked_until=locked_until))
         pub = StubEventPublisher()
         service, _, _ = _make_service(auth_repo=repo, event_publisher=pub)
@@ -685,7 +685,7 @@ class TestAccountLocked:
     async def test_expired_lockout_allows_login(self) -> None:
         """A lock that has elapsed (locked_until in the past) must NOT block login."""
         repo = InMemoryAuthRepository()
-        past_locked_until = _FIXED_NOW - timedelta(seconds=1)
+        past_locked_until = datetime.now(UTC) - timedelta(seconds=1)
         await repo.save(_make_active_credential(locked_until=past_locked_until))
         service, _, _ = _make_service(auth_repo=repo)
 

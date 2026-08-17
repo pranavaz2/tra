@@ -72,6 +72,7 @@ os.environ.setdefault("LOG_FORMAT", "text")
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -126,9 +127,9 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
 
     # Import all model modules here as they are added so their tables are included
     # in create_all(). Add a line for each new module:
-    #   from app.modules.trips.models import TripModel  # noqa: F401
     #   from app.modules.users.models import UserModel  # noqa: F401
     from app.modules.locations.models import Location  # noqa: F401
+    from app.modules.travel.trips.infrastructure.models.trip_model import TripModel  # noqa: F401
 
     settings = get_settings()
     engine = create_async_engine(
@@ -138,12 +139,28 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
     )
 
     async with engine.begin() as conn:
+        # Create stub users table first so TripModel's FK to users.id is satisfied.
+        # The users table is owned by the Identity module and will have its own
+        # migration in a future task. For now we create a minimal stub here.
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id UUID PRIMARY KEY,
+                    email TEXT NOT NULL UNIQUE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+                """
+            )
+        )
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+        # Drop stub users table after all ORM tables are gone.
+        await conn.execute(text("DROP TABLE IF EXISTS users"))
 
     await engine.dispose()
 

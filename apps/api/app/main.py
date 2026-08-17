@@ -154,10 +154,30 @@ def create_app() -> FastAPI:
         router as auth_router,
     )
     from app.modules.locations.router import router as locations_router
+    from app.modules.travel.trips.presentation.router import router as trips_router
+    from app.modules.travel.itinerary.presentation.router import router as itinerary_router
+    from app.modules.travel.planning.presentation.router import router as planning_router
+    from app.modules.travel.budget.presentation.router import router as budget_router
+    from app.modules.travel.sharing.presentation.router import (
+        router as sharing_router,
+        public_router as sharing_public_router,
+    )
+    from app.modules.travel.media.presentation.router import router as media_router
+    from app.modules.travel.recommendations.presentation.router import (
+        router as recommendations_router,
+    )
 
     api_v1_router = APIRouter(prefix="/api/v1")
     api_v1_router.include_router(auth_router)
     api_v1_router.include_router(locations_router)
+    api_v1_router.include_router(trips_router)
+    api_v1_router.include_router(itinerary_router)
+    api_v1_router.include_router(planning_router)
+    api_v1_router.include_router(budget_router)
+    api_v1_router.include_router(sharing_router)
+    api_v1_router.include_router(sharing_public_router)
+    api_v1_router.include_router(media_router)
+    api_v1_router.include_router(recommendations_router)
     app.include_router(api_v1_router)
 
     logger.info("Application routes registered")

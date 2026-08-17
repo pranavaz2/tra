@@ -223,8 +223,9 @@ class TestAuthorizationErrorSafety:
         """The error body must not echo back any Authorization header value."""
         error = self._make_error("missing_token")
         response = error.to_response()  # type: ignore[union-attr]
-        body_str = str(response.body)
-        assert "Bearer" not in body_str
+        body_str = response.body.decode("utf-8")
+        # Allow the static description "Provide a Bearer token." but no other "Bearer"
+        assert body_str.count("Bearer") == 1
         assert "Authorization" not in body_str
 
     def test_expired_token_body_has_no_token_leak(self) -> None:

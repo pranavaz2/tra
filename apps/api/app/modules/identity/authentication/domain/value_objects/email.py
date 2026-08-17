@@ -56,7 +56,7 @@ class Email(ValueObject):
         normalised = self.value.strip().lower()
         object.__setattr__(self, "value", normalised)
 
-        if not is_valid_email_format(normalised):
+        if len(normalised) > 254 or not is_valid_email_format(normalised):
             raise InvalidEmailError(f"'{normalised}' is not a valid email address.")
 
     def __str__(self) -> str:

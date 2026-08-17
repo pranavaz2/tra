@@ -38,7 +38,7 @@ from __future__ import annotations
 import base64
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, Field, model_config
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -91,7 +91,7 @@ def decode_cursor(cursor: str) -> str:
 class PaginationMeta(BaseModel):
     """Pagination metadata included in every collection response."""
 
-    model_config = model_config(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     next_cursor: str | None = Field(
         default=None,
@@ -122,7 +122,7 @@ class CursorPage(BaseModel, Generic[T]):
             ...
     """
 
-    model_config = model_config(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     items: list[T] = Field(description="The items on this page.")
     pagination: PaginationMeta
