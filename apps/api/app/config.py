@@ -56,9 +56,18 @@ class Settings(BaseSettings):
     # Security
     # -------------------------------------------------------------------------
     secret_key: SecretStr
-    cors_allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    cors_allowed_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:8085",
+        "http://localhost:8081",
+        "http://127.0.0.1:8085",
+        "http://127.0.0.1:8000",
+        "http://10.52.14.15:8085",
+        "http://10.52.14.15:8000",
+    ]
     cors_allowed_methods: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    cors_allowed_headers: list[str] = ["Authorization", "Content-Type", "Accept"]
+    cors_allowed_headers: list[str] = ["Authorization", "Content-Type", "Accept", "X-Request-ID"]
 
     # -------------------------------------------------------------------------
     # JWT (see ADR-003: HS256 with RS256 migration path)
@@ -110,18 +119,22 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     # AI Provider
     # -------------------------------------------------------------------------
-    ai_provider: Literal["openai", "anthropic", "mock"] = "mock"
+    ai_provider: Literal["openai", "anthropic", "gemini", "mock"] = "mock"
     ai_api_key: SecretStr | None = None
-    ai_model: str | None = None
+    gemini_api_key: SecretStr | None = None
+    ai_model: str = "gemini-3.6-flash"
+    ai_temperature: float = 0.4
     ai_max_tokens: int = 4096
-    ai_timeout_seconds: int = 60
+    ai_timeout_seconds: int = 120
     ai_max_retries: int = 3
 
     # -------------------------------------------------------------------------
-    # Maps Provider
+    # Maps & Places Provider
     # -------------------------------------------------------------------------
-    maps_provider: Literal["google", "mock"] = "mock"
+    maps_provider: Literal["google", "osm", "mock"] = "mock"
+    places_provider: Literal["google", "osm", "mock"] = "mock"
     google_maps_server_api_key: SecretStr | None = None
+    google_places_api_key: SecretStr | None = None
     google_maps_client_api_key: SecretStr | None = None
 
     # -------------------------------------------------------------------------
@@ -228,14 +241,23 @@ class Settings(BaseSettings):
     # =========================================================================
 
     @model_validator(mode="after")
-    def validate_provider_credentials(self) -> "Settings":
-        if self.ai_provider != "mock" and not self.ai_api_key:
+    def validate_provider_credentials(self) -> Settings:
+        effective_ai_key = self.ai_api_key or self.gemini_api_key
+        if self.ai_provider != "mock" and not effective_ai_key:
             raise ValueError(
-                f"AI_API_KEY is required when AI_PROVIDER is '{self.ai_provider}'"
+                f"AI_API_KEY (or GEMINI_API_KEY) is required when AI_PROVIDER is '{self.ai_provider}'"
             )
-        if self.maps_provider != "mock" and not self.google_maps_server_api_key:
+        effective_places_key = (
+            self.google_places_api_key or self.google_maps_server_api_key
+        )
+        effective_places_key_value = (
+            effective_places_key.get_secret_value() if effective_places_key else None
+        )
+        if (
+            self.maps_provider == "google" or self.places_provider == "google"
+        ) and not effective_places_key_value:
             raise ValueError(
-                "GOOGLE_MAPS_SERVER_API_KEY is required when MAPS_PROVIDER is 'google'"
+                "GOOGLE_MAPS_SERVER_API_KEY (or GOOGLE_PLACES_API_KEY) is required when PLACES_PROVIDER is 'google'"
             )
         if self.is_production and self.app_debug:
             raise ValueError("APP_DEBUG must be false in production")

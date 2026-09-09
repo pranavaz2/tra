@@ -262,14 +262,16 @@ class Itinerary(AggregateRoot[ItineraryId]):
         else:
             day_id = old_day.entity_id
 
-        item.title = title
-        item.item_type = item_type
-        item.description = description
-        item.start_time = start_time
-        item.end_time = end_time
-        item.location_id = location_id
-        item.cost = cost
-        item.currency = currency
+        if title is not None:
+            item.title = title
+        if item_type is not None:
+            item.item_type = item_type
+        item.description = description if description is not None else item.description
+        item.start_time = start_time if start_time is not None else item.start_time
+        item.end_time = end_time if end_time is not None else item.end_time
+        item.location_id = location_id if location_id is not None else item.location_id
+        item.cost = cost if cost is not None else item.cost
+        item.currency = currency if currency is not None else item.currency
         item.touch()
 
         self._mutate()
@@ -279,8 +281,8 @@ class Itinerary(AggregateRoot[ItineraryId]):
                 itinerary_id=str(self.itinerary_id),
                 day_id=str(day_id),
                 item_id=str(item_id),
-                title=str(title),
-                item_type=item_type.value,
+                title=str(item.title),
+                item_type=item.item_type.value,
             )
         )
 

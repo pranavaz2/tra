@@ -6,6 +6,7 @@ import logging
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.db.query import exclude_deleted
 from app.modules.travel.itinerary.domain.entities.day import ItineraryDay
@@ -38,14 +39,24 @@ class SQLAlchemyItineraryRepository:
 
     async def find_by_id(self, itinerary_id: ItineraryId) -> Itinerary | None:
         """Return the Itinerary with the given ID, or None."""
-        model = await self._session.get(ItineraryModel, itinerary_id.value)
+        stmt = (
+            select(ItineraryModel)
+            .where(ItineraryModel.id == itinerary_id.value)
+            .options(selectinload(ItineraryModel.days).selectinload(ItineraryDayModel.items))
+        )
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
         if model is None:
             return None
         return self._to_domain(model)
 
     async def find_by_trip_id(self, trip_id: TripId) -> Itinerary | None:
         """Return the Itinerary for the given Trip, or None."""
-        stmt = select(ItineraryModel).where(ItineraryModel.trip_id == trip_id.value)
+        stmt = (
+            select(ItineraryModel)
+            .where(ItineraryModel.trip_id == trip_id.value)
+            .options(selectinload(ItineraryModel.days).selectinload(ItineraryDayModel.items))
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         if model is None:
@@ -72,7 +83,14 @@ class SQLAlchemyItineraryRepository:
 
     async def save(self, itinerary: Itinerary) -> None:
         """Persist a new or updated itinerary using ORM synchronization."""
-        model = await self._session.get(ItineraryModel, itinerary.itinerary_id.value)
+        stmt = (
+            select(ItineraryModel)
+            .where(ItineraryModel.id == itinerary.itinerary_id.value)
+            .options(selectinload(ItineraryModel.days).selectinload(ItineraryDayModel.items))
+            .execution_options(populate_existing=True)
+        )
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
 
         if model is None:
             model = ItineraryModel(id=itinerary.itinerary_id.value)
@@ -87,7 +105,7 @@ class SQLAlchemyItineraryRepository:
 
         # Synchronize Days
         existing_days = {d.id: d for d in model.days}
-        domain_days = {d.day_id.value: d for d in itinerary.days}
+        domain_days = {d.entity_id.value: d for d in itinerary.days}
 
         # 1. Update/Add Days
         updated_days = []
@@ -107,7 +125,7 @@ class SQLAlchemyItineraryRepository:
 
             # Synchronize Items for this day
             existing_items = {i.id: i for i in d_model.items}
-            domain_items = {i.item_id.value: i for i in d_domain.items}
+            domain_items = {i.entity_id.value: i for i in d_domain.items}
 
             # Update/Add Items
             updated_items = []

@@ -17,6 +17,8 @@ class RequestProposalCommand:
     interests: list[str]
     travel_style: str
     special_requirements: str
+    currency: str = "INR"
+    target_budget: str | None = None  # String from API, parsed to Decimal in service
 
 
 @dataclass(frozen=True)
@@ -25,6 +27,7 @@ class AcceptProposalCommand:
 
     proposal_id: str
     requester_id: str
+    apply_to_itinerary: bool = True
 
 
 @dataclass(frozen=True)

@@ -102,6 +102,9 @@ from app.modules.identity.authentication.domain.value_objects.password_hash impo
 from app.modules.identity.authentication.domain.value_objects.plain_refresh_token import (
     PlainRefreshToken,
 )
+from app.modules.identity.authentication.domain.value_objects.refresh_token_id import (
+    RefreshTokenId,
+)
 from app.modules.identity.authentication.domain.value_objects.session_id import SessionId
 from app.modules.identity.authentication.domain.value_objects.user_id import UserId
 from app.shared.domain.clock import Clock
@@ -557,22 +560,9 @@ class LoginService:
             Exception on unexpected infrastructure failure.
         """
         session_id = SessionId(self._uuid.generate())
+        refresh_token_id = RefreshTokenId.generate()
 
-        # Issue refresh token (generates, hashes, persists record)
-        refresh_result = await self._refresh_token_service.issue(
-            session_id=session_id,
-            user_id=user_id,
-            expires_at=refresh_token_expires_at,
-            device_id=command.device_id,
-            device_name=command.device_name,
-            platform=command.platform,
-        )
-        if not refresh_result.is_ok:
-            raise refresh_result.error  # triggers UoW rollback
-
-        plain_token, refresh_token_id = refresh_result.value
-
-        # Create session aggregate (emits UserLoggedIn domain event)
+        # 1. Create and save session aggregate FIRST so FK exists
         session = AuthenticationSession.create(
             session_id=session_id,
             user_id=user_id,
@@ -582,6 +572,21 @@ class LoginService:
             user_agent=command.user_agent,
         )
         await self._session_repo.save(session)
+
+        # 2. Issue refresh token SECOND (inserts into refresh_token_records)
+        refresh_result = await self._refresh_token_service.issue(
+            session_id=session_id,
+            user_id=user_id,
+            expires_at=refresh_token_expires_at,
+            record_id=refresh_token_id,
+            device_id=command.device_id,
+            device_name=command.device_name,
+            platform=command.platform,
+        )
+        if not refresh_result.is_ok:
+            raise refresh_result.error  # triggers UoW rollback
+
+        plain_token, _ = refresh_result.value
 
         # Sign the access token (PyJWT is synchronous + CPU-bound, but fast enough
         # to run in the event loop — no asyncio.to_thread needed here)

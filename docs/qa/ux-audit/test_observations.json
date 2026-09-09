@@ -1,0 +1,192 @@
+[
+  {
+    "step": 1,
+    "screen": "Login Screen",
+    "title": "Initial App Launch",
+    "status": "OK",
+    "details": "App renders modern dark-mode branding with email and password fields.",
+    "uxIssue": "Smooth clean typography, responsive layout.",
+    "screenshot": "01_login_screen.png",
+    "timestamp": "2026-09-05T15:41:20.150Z"
+  },
+  {
+    "step": 2,
+    "screen": "Register Screen",
+    "title": "User Registration View",
+    "status": "OK",
+    "details": "Shows Email, Password (min 12 chars requirement), and Confirm Password.",
+    "uxIssue": "Clear requirements and responsive input fields.",
+    "screenshot": "02_register_screen.png",
+    "timestamp": "2026-09-05T15:41:22.303Z"
+  },
+  {
+    "step": 3,
+    "screen": "Home Screen",
+    "title": "AI-First Main Dashboard",
+    "status": "OK",
+    "details": "Greets user with prominent AI Travel Planner hero card, prompt inspiration chips (Mysore, Goa, Manali), quick stats, and Recent Trips.",
+    "uxIssue": "EXCELLENT AI ENTRY: Users can immediately type a dream trip or tap an inspiration prompt chip.",
+    "screenshot": "03_home_dashboard.png",
+    "timestamp": "2026-09-05T15:41:25.142Z"
+  },
+  {
+    "step": 4,
+    "screen": "AI Travel Planner",
+    "title": "Unified AI Trip Planning Form",
+    "status": "OK",
+    "details": "Single unified flow collecting Destination, Duration in Days, Target Budget, Travel Style, Interests, and Special Notes.",
+    "uxIssue": "SEAMLESS TRAVELER UX: Replaces blank metadata dialog with natural travel planning inputs.",
+    "screenshot": "04_create_trip_modal.png",
+    "timestamp": "2026-09-05T15:41:26.885Z"
+  },
+  {
+    "step": 5,
+    "screen": "AI Travel Planner",
+    "title": "Preferences Configured",
+    "status": "OK",
+    "details": "Configured: Mysore, India 822, 3 days, ₹15,000 budget, Balanced style, History/Food interests, and special food requests.",
+    "uxIssue": "Intuitive form with preselected defaults and visual style chips.",
+    "screenshot": "05_create_trip_filled.png",
+    "timestamp": "2026-09-05T15:41:35.591Z"
+  },
+  {
+    "step": 6,
+    "screen": "AI Proposal Preview Screen",
+    "title": "Traveler-Friendly AI Travel Plan",
+    "status": "OK",
+    "details": "Shows AI Concept Summary, Travel Pace, Estimated Budget, and Day-by-Day schedule with verified places and zero raw UUIDs.",
+    "uxIssue": "EXCELLENT PRESENTATION: Technical proposal terminology replaced with genuine travel plan layout.",
+    "screenshot": "10_ai_proposal_preview.png",
+    "timestamp": "2026-09-05T15:41:39.571Z"
+  },
+  {
+    "step": 7,
+    "screen": "AI Proposal Preview Screen",
+    "title": "Detailed Daily Stops & Timing",
+    "status": "OK",
+    "details": "Shows verified Mysore venues (Palace, Mylari dosa, Chamundi Hill), time slots, durations, category badges, and notes.",
+    "uxIssue": "Prominent \"Save to My Trip\" CTA pinned at bottom.",
+    "screenshot": "11_ai_proposal_stops.png",
+    "timestamp": "2026-09-05T15:41:41.227Z"
+  },
+  {
+    "step": 9,
+    "screen": "Trip Details Hub",
+    "title": "Traveler-First Trip Hub",
+    "status": "OK",
+    "details": "Features Hero Header (Status: PLANNED), Today/Next Activity highlight, Itinerary preview, AI Travel Copilot card, Budget gauge (₹15,000 limit), and collapsed Trip Tools.",
+    "uxIssue": "HUGE UX IMPROVEMENT: Clean, prioritized traveler essentials; developer UUIDs and separate 7-module clutter removed.",
+    "screenshot": "07_trip_details_hub.png",
+    "timestamp": "2026-09-05T15:41:48.890Z"
+  },
+  {
+    "step": 8,
+    "screen": "Home Screen",
+    "title": "Recent Trips with Planned Status",
+    "status": "OK",
+    "details": "New Mysore trip appears under Recent Trips with \"PLANNED\" badge, 3 days duration, and direct entry.",
+    "uxIssue": "Clear, inspiring trip card.",
+    "screenshot": "06_home_with_new_trip.png",
+    "timestamp": "2026-09-05T15:41:53.752Z"
+  },
+  {
+    "step": 10,
+    "screen": "Itinerary Screen",
+    "title": "Daily Timeline View",
+    "status": "OK",
+    "details": "Materialized schedule showing Day tabs (Day 1, Day 2, Day 3), time slots, activities, and travel notes.",
+    "uxIssue": "Complete verified stops with time allocations.",
+    "screenshot": "12_itinerary_timeline.png",
+    "timestamp": "2026-09-05T15:41:58.806Z"
+  },
+  {
+    "step": 11,
+    "screen": "AI Assistant Screen",
+    "title": "Conversational Copilot Interface",
+    "status": "OK",
+    "details": "Features quick prompt chips (\"Check schedule conflicts\", \"Estimate travel time\"), travel warning banner, and message input.",
+    "uxIssue": "Clean interactive assistant screen.",
+    "screenshot": "13_assistant_initial.png",
+    "timestamp": "2026-09-05T15:42:03.847Z"
+  },
+  {
+    "step": 12,
+    "screen": "AI Assistant Screen",
+    "title": "Schedule Intelligence Response",
+    "status": "OK",
+    "details": "AI Assistant analyzes current itinerary schedule and verifies timing conflicts.",
+    "uxIssue": "Assistant answers conversationally, citing the generated itinerary state.",
+    "screenshot": "14_assistant_response_day1.png",
+    "timestamp": "2026-09-05T15:42:12.599Z"
+  },
+  {
+    "step": 13,
+    "screen": "AI Assistant Screen",
+    "title": "Travel Feasibility & Time Breakdown",
+    "status": "OK",
+    "details": "AI Assistant estimates inter-stop travel durations across Day 1, 2, and 3.",
+    "uxIssue": "Provides actionable transit advice.",
+    "screenshot": "15_assistant_pacing_response.png",
+    "timestamp": "2026-09-05T15:42:21.749Z"
+  },
+  {
+    "step": 14,
+    "screen": "Budget Screen",
+    "title": "Auto-Initialized Budget Tracker",
+    "status": "OK",
+    "details": "Shows ₹15,000 Total Budget limit automatically created from AI planning proposal, spent gauge, and category breakdowns.",
+    "uxIssue": "ZERO REDUNDANT SETUP: Budget was initialized seamlessly upon saving AI plan.",
+    "screenshot": "16_budget_screen.png",
+    "timestamp": "2026-09-05T15:42:26.904Z"
+  },
+  {
+    "step": 15,
+    "screen": "Collaboration Screen",
+    "title": "Members & Sharing Link",
+    "status": "OK",
+    "details": "Shows Owner status, Invite Collaborator button, Share Link generator, and Member roles (Owner, Editor, Viewer).",
+    "uxIssue": "Clean collaboration dashboard.",
+    "screenshot": "17_collaboration_screen.png",
+    "timestamp": "2026-09-05T15:42:31.926Z"
+  },
+  {
+    "step": 16,
+    "screen": "Notification Preferences Screen",
+    "title": "Notification Settings",
+    "status": "OK",
+    "details": "Granular switches for Schedule Changes, Travel Advisories, Collaborator Activity, and Quiet Hours settings.",
+    "uxIssue": "Comprehensive preference controls.",
+    "screenshot": "18_notification_preferences.png",
+    "timestamp": "2026-09-05T15:42:36.977Z"
+  },
+  {
+    "step": 17,
+    "screen": "Activity Timeline Screen",
+    "title": "Trip Activity Stream",
+    "status": "OK",
+    "details": "Chronological list of all actions performed on the trip (trip created, proposal requested, proposal accepted, itinerary populated, budget created).",
+    "uxIssue": "Clear chronological history.",
+    "screenshot": "19_activity_timeline.png",
+    "timestamp": "2026-09-05T15:42:41.992Z"
+  },
+  {
+    "step": 18,
+    "screen": "Media Screen",
+    "title": "Photo & Attachment Gallery",
+    "status": "OK",
+    "details": "Traveler guidance empty state with \"Add Media\" button, category filters (All, Photos, Receipts, Tickets), and storage gauge.",
+    "uxIssue": "Engaging empty state with clear instructions.",
+    "screenshot": "20_media_screen.png",
+    "timestamp": "2026-09-05T15:42:47.022Z"
+  },
+  {
+    "step": 19,
+    "screen": "Trip Details Hub",
+    "title": "Complete Planned Journey Hub",
+    "status": "OK",
+    "details": "Status badge is \"PLANNED\", hero highlights destination and date count, upcoming activity is ready, budget progress is tracking, and tools are available.",
+    "uxIssue": "EXCELLENT AI-FIRST EXPERIENCE: End-to-end trip creation in under 30 seconds.",
+    "screenshot": "21_trip_hub_planned_state.png",
+    "timestamp": "2026-09-05T15:42:51.693Z"
+  }
+]

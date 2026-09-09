@@ -144,6 +144,16 @@ def create_app() -> FastAPI:
     # Infrastructure endpoints — not versioned, no auth required
     app.include_router(health_router)
 
+    @app.get("/", tags=["Root"])
+    async def root() -> dict[str, str]:
+        """Root endpoint confirming API status and pointing to interactive documentation."""
+        return {
+            "name": "Travix AI API",
+            "status": "online",
+            "docs_url": "/docs",
+            "version": s.app_version,
+        }
+
     # API v1 router — all feature module routes live under /api/v1/
     # Register feature module routers here as they are implemented:
     #
@@ -163,8 +173,26 @@ def create_app() -> FastAPI:
         public_router as sharing_public_router,
     )
     from app.modules.travel.media.presentation.router import router as media_router
+    from app.modules.travel.assistant.presentation.router import (
+        router as assistant_router,
+    )
     from app.modules.travel.recommendations.presentation.router import (
         router as recommendations_router,
+    )
+    from app.modules.travel.realtime.presentation.router import (
+        router as realtime_router,
+    )
+    from app.modules.travel.activity.presentation.router import (
+        router as activity_router,
+    )
+    from app.modules.travel.notifications.presentation.router import (
+        router as notifications_router,
+    )
+    from app.modules.travel.export.presentation.router import (
+        router as export_router,
+    )
+    from app.modules.travel.jobs.presentation.router import (
+        router as jobs_router,
     )
 
     api_v1_router = APIRouter(prefix="/api/v1")
@@ -178,7 +206,14 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(sharing_public_router)
     api_v1_router.include_router(media_router)
     api_v1_router.include_router(recommendations_router)
+    api_v1_router.include_router(assistant_router)
+    api_v1_router.include_router(realtime_router)
+    api_v1_router.include_router(activity_router)
+    api_v1_router.include_router(notifications_router)
+    api_v1_router.include_router(export_router)
+    api_v1_router.include_router(jobs_router)
     app.include_router(api_v1_router)
+
 
     logger.info("Application routes registered")
     return app

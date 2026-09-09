@@ -33,23 +33,37 @@ Idempotency:
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
 
 from app.config import get_settings
+from app.core.security.auth.dependencies import RequireAuthentication
+from app.core.security.jwt.claims import AccessTokenClaims
+from app.core.security.jwt.dependencies import CurrentJWTService
 from app.modules.identity.authentication.application.commands import (
     LoginUserCommand,
     RegisterUserCommand,
 )
+from app.modules.identity.authentication.domain.errors import (
+    AccountDisabledError,
+    RefreshTokenNotFoundError,
+)
+from app.modules.identity.authentication.domain.value_objects.session_id import SessionId
 from app.modules.identity.authentication.infrastructure.dependencies import (
+    CurrentAuthRepository,
     CurrentLoginService,
+    CurrentRefreshTokenService,
+    CurrentRefreshTokenStore,
     CurrentRegistrationService,
+    CurrentSessionRepository,
 )
 from app.modules.identity.authentication.presentation.error_responses import (
     map_login_failure,
+    map_refresh_failure,
     map_registration_failure,
 )
 from app.modules.identity.authentication.presentation.request_context import (
@@ -60,6 +74,8 @@ from app.modules.identity.authentication.presentation.schemas import (
     DataEnvelope,
     LoginRequest,
     LoginResponse,
+    LogoutRequest,
+    RefreshRequest,
     RegisterRequest,
     RegisterResponse,
     SessionResponse,
@@ -72,6 +88,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 _REGISTER_PATH = "/api/v1/auth/register"
 _LOGIN_PATH = "/api/v1/auth/login"
+_REFRESH_PATH = "/api/v1/auth/refresh"
+_LOGOUT_PATH = "/api/v1/auth/logout"
 
 # Idempotency-Key header name (extension point — not yet persisted)
 _IDEMPOTENCY_KEY_HEADER = "Idempotency-Key"
@@ -771,3 +789,147 @@ async def login_user(
         content=DataEnvelope(data=response_data).model_dump(mode="json"),
         headers={"X-Request-ID": ctx.request_id},
     )
+
+
+@router.post(
+    "/refresh",
+    status_code=200,
+    summary="Refresh access token",
+    operation_id="refreshToken",
+    response_description="Tokens rotated successfully.",
+    response_model=DataEnvelope[LoginResponse],
+)
+async def refresh(
+    body: RefreshRequest,
+    refresh_token_service: CurrentRefreshTokenService,
+    token_store: CurrentRefreshTokenStore,
+    auth_repo: CurrentAuthRepository,
+    jwt_service: CurrentJWTService,
+    ctx: CurrentRequestContext,
+) -> Response:
+    """
+    Exchange a valid refresh token for a new access token and rotated refresh token.
+    """
+    result = await refresh_token_service.rotate(
+        presented_token=body.refresh_token,
+    )
+
+    if not result.is_ok:
+        logger.info(
+            "Refresh failed",
+            extra={"request_id": ctx.request_id, "error_code": result.error.code},
+        )
+        return map_refresh_failure(
+            result.error,
+            trace_id=ctx.request_id,
+            instance=_REFRESH_PATH,
+        )
+
+    new_plain_token, new_record_id = result.value
+    new_record = await token_store.find_by_id(new_record_id)
+    if new_record is None:
+        return map_refresh_failure(
+            RefreshTokenNotFoundError(),
+            trace_id=ctx.request_id,
+            instance=_REFRESH_PATH,
+        )
+
+    credential = await auth_repo.find_by_user_id(new_record.user_id)
+    if credential is None or not credential.is_active:
+        return map_refresh_failure(
+            AccountDisabledError("Account is deactivated."),
+            trace_id=ctx.request_id,
+            instance=_REFRESH_PATH,
+        )
+
+    settings = get_settings()
+    now = datetime.now(UTC)
+    access_token_expires_at = now + timedelta(minutes=settings.jwt_access_token_expire_minutes)
+    refresh_token_expires_at = new_record.expires_at
+
+    claims = AccessTokenClaims(
+        sub=str(new_record.user_id),
+        jti=str(uuid.uuid4()),
+        iat=now,
+        exp=access_token_expires_at,
+        nbf=now,
+        iss=settings.jwt_issuer,
+        aud=settings.jwt_audience,
+        sid=str(new_record.session_id),
+        email=str(credential.email),
+        verified=credential.is_email_verified,
+    )
+    access_token = jwt_service.create_access_token(claims)
+
+    session_response = SessionResponse(
+        session_id=str(new_record.session_id),
+        device_name=new_record.device_name,
+        created_at=ctx.received_at,
+    )
+
+    user_response = UserResponse(
+        user_id=str(credential.user_id),
+        email=str(credential.email),
+        is_email_verified=credential.is_email_verified,
+    )
+
+    response_data = LoginResponse(
+        access_token=access_token,
+        refresh_token=new_plain_token.as_client_token(),
+        token_type="Bearer",
+        access_token_expires_at=access_token_expires_at,
+        refresh_token_expires_at=refresh_token_expires_at,
+        session=session_response,
+        user=user_response,
+    )
+
+    logger.info(
+        "Token refresh succeeded",
+        extra={
+            "request_id": ctx.request_id,
+            "user_id": str(new_record.user_id),
+            "session_id": str(new_record.session_id),
+        },
+    )
+
+    return JSONResponse(
+        status_code=200,
+        content=DataEnvelope(data=response_data).model_dump(mode="json"),
+        headers={"X-Request-ID": ctx.request_id},
+    )
+
+
+@router.post(
+    "/logout",
+    status_code=204,
+    summary="Log out of current session",
+    operation_id="logoutUser",
+    response_description="Session terminated successfully.",
+)
+async def logout(
+    auth: RequireAuthentication,
+    refresh_token_service: CurrentRefreshTokenService,
+    session_repo: CurrentSessionRepository,
+    ctx: CurrentRequestContext,
+    body: LogoutRequest | None = None,
+) -> Response:
+    """
+    Log out of the current session and revoke tokens.
+    """
+    if body and body.refresh_token:
+        await refresh_token_service.revoke(presented_token=body.refresh_token)
+
+    if auth.session_id:
+        try:
+            await refresh_token_service.revoke_all_for_session(
+                session_id=SessionId(uuid.UUID(auth.session_id))
+            )
+            await session_repo.delete(session_id=SessionId(uuid.UUID(auth.session_id)))
+        except Exception as e:
+            logger.warning("Session cleanup on logout encountered error: %s", e)
+
+    return Response(
+        status_code=204,
+        headers={"X-Request-ID": ctx.request_id},
+    )
+

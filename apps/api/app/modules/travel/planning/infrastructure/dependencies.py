@@ -26,6 +26,7 @@ from app.modules.travel.planning.domain.repositories.interfaces import (
 from app.modules.travel.planning.infrastructure.repositories.proposal_repository import (
     SQLAlchemyTripProposalRepository,
 )
+from app.modules.travel.itinerary.infrastructure.dependencies import CurrentItineraryRepository
 from app.modules.travel.trips.infrastructure.dependencies import (
     CurrentTripRepository,
     get_trip_event_publisher,
@@ -116,6 +117,7 @@ def get_planning_service(
     event_publisher: Annotated[EventPublisher, Depends(get_trip_event_publisher)],
     uuid_provider: Annotated[UUIDProvider, Depends(get_trip_uuid_provider)],
     clock: CurrentClock,
+    itinerary_repository: CurrentItineraryRepository,
 ) -> PlanningService:
     """Compose and return the PlanningService."""
     return PlanningService(
@@ -126,6 +128,7 @@ def get_planning_service(
         event_publisher=event_publisher,
         uuid_provider=uuid_provider,
         clock=clock,
+        itinerary_repository=itinerary_repository,
     )
 
 

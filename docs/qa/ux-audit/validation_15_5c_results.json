@@ -1,0 +1,122 @@
+[
+  {
+    "step": 1,
+    "category": "Auth",
+    "title": "Mobile Login Screen",
+    "status": "PASSED",
+    "details": "Branded dark mode mobile auth screen with responsive inputs.",
+    "assessment": "Clean, mobile-first design.",
+    "screenshot": "c01_login_view.png",
+    "timestamp": "2026-09-05T16:20:39.569Z"
+  },
+  {
+    "step": 2,
+    "category": "Home",
+    "title": "AI Travel Planner Hero with Inspiration Chips",
+    "status": "PASSED",
+    "details": "Hero card with verified places badge and 3 inspiration prompt chips (Mysore, Goa, Manali).",
+    "assessment": "One-tap entry enables fast trip planning initiation.",
+    "screenshot": "c02_home_inspiration.png",
+    "timestamp": "2026-09-05T16:20:41.301Z"
+  },
+  {
+    "step": 3,
+    "category": "Planning",
+    "title": "Unified AI Trip Planning Form",
+    "status": "PASSED",
+    "details": "Destination, duration, budget target, style, and interests in a single non-technical screen.",
+    "assessment": "Replaces multi-step database container creation.",
+    "screenshot": "c03_ai_planner_form_empty.png",
+    "timestamp": "2026-09-05T16:20:42.682Z"
+  },
+  {
+    "step": 4,
+    "category": "Planning",
+    "title": "Configured AI Travel Parameters",
+    "status": "PASSED",
+    "details": "Filled destination, duration, budget target (₹15,000), travel style, and special culinary requests.",
+    "assessment": "Validation enforces sensible ranges (1-30 days).",
+    "screenshot": "c04_ai_planner_form_filled.png",
+    "timestamp": "2026-09-05T16:20:47.544Z"
+  },
+  {
+    "step": 5,
+    "category": "Proposal",
+    "title": "Grounded Travel Plan with Verified Venues",
+    "status": "PASSED",
+    "details": "AI concept summary, estimated total budget, pace, and verified daily stops without raw developer UUIDs.",
+    "assessment": "Clear, inspiring travel plan layout.",
+    "screenshot": "c05_proposal_travel_plan.png",
+    "timestamp": "2026-09-05T16:20:49.187Z"
+  },
+  {
+    "step": 6,
+    "category": "Trip Hub",
+    "title": "Redesigned Traveler-First Trip Hub",
+    "status": "PASSED",
+    "details": "Prioritizes Hero Header (PLANNED status), Today/Next highlight, Daily timeline preview, AI Copilot, and Budget gauge.",
+    "assessment": "Streamlined single screen replaces complex 7-module clutter.",
+    "screenshot": "c06_simplified_trip_hub.png",
+    "timestamp": "2026-09-05T16:20:55.502Z"
+  },
+  {
+    "step": 7,
+    "category": "Itinerary",
+    "title": "Multi-Day Itinerary Schedule",
+    "status": "PASSED",
+    "details": "Day 1, 2, 3 tabs with verified activities, durations, and start/end times.",
+    "assessment": "Structured daily schedule with category tags.",
+    "screenshot": "c07_itinerary_timeline.png",
+    "timestamp": "2026-09-05T16:20:59.538Z"
+  },
+  {
+    "step": 8,
+    "category": "Assistant",
+    "title": "Destination-Aware Quick Prompt Chips",
+    "status": "PASSED",
+    "details": "Shows contextual chips: \"Estimate travel times in Mysore\", \"Famous local food to try in Mysore\", etc.",
+    "assessment": "Chips automatically adjust to destination name.",
+    "screenshot": "c08_assistant_destination_chips.png",
+    "timestamp": "2026-09-05T16:21:04.079Z"
+  },
+  {
+    "step": 9,
+    "category": "Assistant",
+    "title": "Contextual Destination Food Advice",
+    "status": "PASSED",
+    "details": "AI Assistant generates tailored Mysore food recommendations referencing local specialties (Mylari dosa, Mysore pak).",
+    "assessment": "Accurate grounded responses citing itinerary context.",
+    "screenshot": "c09_assistant_food_response.png",
+    "timestamp": "2026-09-05T16:21:12.421Z"
+  },
+  {
+    "step": 10,
+    "category": "Budget",
+    "title": "Auto-Initialized ₹15,000 Budget Ledger",
+    "status": "PASSED",
+    "details": "Verified ₹15,000 target limit automatically populated from AI planning proposal.",
+    "assessment": "Zero manual budget setup required.",
+    "screenshot": "c10_budget_auto_initialized.png",
+    "timestamp": "2026-09-05T16:21:16.961Z"
+  },
+  {
+    "step": 12,
+    "category": "Permissions",
+    "title": "Viewer Role Enforcement in AI Assistant",
+    "status": "PASSED",
+    "details": "Shows \"Viewer\" role badge in header and prevents unauthorized schedule mutations.",
+    "assessment": "Strict read-only role enforcement active.",
+    "screenshot": "c12_viewer_assistant_permissions.png",
+    "timestamp": "2026-09-05T16:21:21.695Z"
+  },
+  {
+    "step": 13,
+    "category": "Auth",
+    "title": "Clean Logout & Session Clearance",
+    "status": "PASSED",
+    "details": "Successfully cleared credentials and redirected back to login screen.",
+    "assessment": "Session destroyed securely.",
+    "screenshot": "c13_post_logout_screen.png",
+    "timestamp": "2026-09-05T16:21:28.283Z"
+  }
+]

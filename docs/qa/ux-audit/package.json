@@ -1,0 +1,12 @@
+{
+  "name": "travix-automated-ux-audit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Automated UI/UX audit test harness for Travix Mobile Expo",
+  "scripts": {
+    "audit": "node run_audit.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.1"
+  }
+}

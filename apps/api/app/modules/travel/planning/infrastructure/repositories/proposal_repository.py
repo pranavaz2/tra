@@ -175,6 +175,13 @@ class SQLAlchemyTripProposalRepository:
                             category=a["category"],
                             duration_minutes=a["duration_minutes"],
                             estimated_cost=a.get("estimated_cost"),
+                            provider_place_id=a.get("provider_place_id"),
+                            place_name=a.get("place_name"),
+                            formatted_address=a.get("formatted_address"),
+                            latitude=a.get("latitude"),
+                            longitude=a.get("longitude"),
+                            rating=a.get("rating"),
+                            is_verified=a.get("is_verified", True),
                         )
                     )
                 days.append(
@@ -269,6 +276,13 @@ class SQLAlchemyTripProposalRepository:
                         "category": a.category,
                         "duration_minutes": a.duration_minutes,
                         "estimated_cost": a.estimated_cost,
+                        "provider_place_id": a.provider_place_id,
+                        "place_name": a.place_name,
+                        "formatted_address": a.formatted_address,
+                        "latitude": a.latitude,
+                        "longitude": a.longitude,
+                        "rating": a.rating,
+                        "is_verified": a.is_verified,
                     }
                 )
             serialized_days.append(

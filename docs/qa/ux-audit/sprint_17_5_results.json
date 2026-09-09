@@ -1,0 +1,492 @@
+{
+  "results": [
+    {
+      "step": 0,
+      "category": "PROVIDER",
+      "title": "Backend Health Check",
+      "status": "PASSED",
+      "details": "HTTP 200 — {\"status\":\"alive\",\"version\":\"0.1.0\",\"environment\":\"local\",\"timestamp\":\"2026-09-06T08:48:58.277957+00:00\",\"checks\":null}",
+      "assessment": "FastAPI backend is alive",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:48:58.281Z"
+    },
+    {
+      "step": 0,
+      "category": "PROVIDER",
+      "title": "AI Engine: Unknown (proposal failed)",
+      "status": "FAILED",
+      "details": "Failure: [google_places] Google Places API authentication or permissions failed.",
+      "assessment": "GeminiPlanningEngine IS selected (AI_PROVIDER=gemini in .env) but the API key is invalid. Real Gemini is NOT generating content.",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:36.225Z"
+    },
+    {
+      "step": 0,
+      "category": "PROVIDER",
+      "title": "Google Maps/Places Key",
+      "status": "FAILED",
+      "details": "Status: REQUEST_DENIED — You must enable Billing on the Google Cloud Project at https://console.cloud.google.com/project/_/billing/enable Learn more at https://developers.google.com/maps/gmp-get-started",
+      "assessment": "Google Maps API key is invalid (REQUEST_DENIED). Real place grounding is NOT active.",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:36.474Z"
+    },
+    {
+      "step": 0,
+      "category": "PROVIDER",
+      "title": "Environment Config (.env)",
+      "status": "INFO",
+      "details": "AI_PROVIDER=gemini | PLACES_PROVIDER=google | MAPS_PROVIDER=google",
+      "assessment": "Config is correct — providers ARE selected. But both API keys fail authentication.",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:36.475Z"
+    },
+    {
+      "step": 1,
+      "category": "HOME",
+      "title": "Home Screen Initial Load",
+      "status": "PASSED",
+      "details": "Expo Web loaded at http://localhost:8081",
+      "assessment": "Verifying AI-first home screen with natural language input",
+      "screenshot": "01_home_initial.png",
+      "timestamp": "2026-09-06T08:49:53.696Z"
+    },
+    {
+      "step": 1,
+      "category": "HOME",
+      "title": "Auth Wall Present",
+      "status": "INFO",
+      "details": "App requires authentication before home screen",
+      "assessment": "Need to register/login to see AI input",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:53.705Z"
+    },
+    {
+      "step": 1,
+      "category": "AUTH",
+      "title": "Test User Registration",
+      "status": "PASSED",
+      "details": "Email: sprint175_1788684593705@travix.ai",
+      "assessment": "JWT token obtained",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:53.821Z"
+    },
+    {
+      "step": 1,
+      "category": "HOME",
+      "title": "Home Screen After Auth Injection",
+      "status": "PASSED",
+      "details": "Reloaded after injecting JWT token",
+      "assessment": "Checking if authenticated home screen shows AI input",
+      "screenshot": "02_home_after_auth.png",
+      "timestamp": "2026-09-06T08:49:58.907Z"
+    },
+    {
+      "step": 2,
+      "category": "HOME",
+      "title": "AI-First Input: \"Where do you want to go?\" present",
+      "status": "PASSED",
+      "details": "Natural language prompt found on home screen",
+      "assessment": "AI-first principle: single NL entry point confirmed",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:58.915Z"
+    },
+    {
+      "step": 2,
+      "category": "HOME",
+      "title": "\"Travix AI\" branding present",
+      "status": "PASSED",
+      "details": "AI identity visible on home screen",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:58.915Z"
+    },
+    {
+      "step": 2,
+      "category": "HOME",
+      "title": "Input fields found on home screen",
+      "status": "INFO",
+      "details": "Found 1 input(s) on the screen",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:58.920Z"
+    },
+    {
+      "step": 2,
+      "category": "HOME",
+      "title": "NL Input Field Visible",
+      "status": "PASSED",
+      "details": "Natural language trip planning input field found",
+      "assessment": "Sprint 17.5 AI input is rendering correctly",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:49:58.925Z"
+    },
+    {
+      "step": 2,
+      "category": "HOME",
+      "title": "NL Input Filled: Mysore 3 days ₹15,000",
+      "status": "PASSED",
+      "details": "Natural language trip query entered",
+      "assessment": "Testing: user expresses trip intent in natural language",
+      "screenshot": "03_home_nl_input_filled.png",
+      "timestamp": "2026-09-06T08:50:01.773Z"
+    },
+    {
+      "step": 2,
+      "category": "HOME",
+      "title": "After NL Submit: Navigation",
+      "status": "PASSED",
+      "details": "Submitted natural language input",
+      "assessment": "Verifying navigation to new trip flow with pre-filled params",
+      "screenshot": "04_after_nl_submit.png",
+      "timestamp": "2026-09-06T08:50:05.428Z"
+    },
+    {
+      "step": 3,
+      "category": "AUTH",
+      "title": "Login Page",
+      "status": "PASSED",
+      "details": "Navigated to /auth/login",
+      "assessment": null,
+      "screenshot": "05_login_page.png",
+      "timestamp": "2026-09-06T08:50:09.535Z"
+    },
+    {
+      "step": 3,
+      "category": "AUTH",
+      "title": "E2E Test User Registered via API",
+      "status": "PASSED",
+      "details": "Email: sprint175_e2e_1788684609535@travix.ai",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:09.661Z"
+    },
+    {
+      "step": 3,
+      "category": "AUTH",
+      "title": "Login Form Email Field",
+      "status": "WARNING",
+      "details": "Email input not found on login page",
+      "assessment": "May need different locator",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:09.667Z"
+    },
+    {
+      "step": 4,
+      "category": "HOME",
+      "title": "Home Screen (Authenticated)",
+      "status": "PASSED",
+      "details": "URL: http://localhost:8081/auth/login",
+      "assessment": "Checking AI-first home screen design",
+      "screenshot": "08_home_logged_in.png",
+      "timestamp": "2026-09-06T08:50:13.280Z"
+    },
+    {
+      "step": 4,
+      "category": "HOME",
+      "title": "\"Where do you want to go?\" heading",
+      "status": "FAILED",
+      "details": "NL prompt not found — old button-first design may still be showing",
+      "assessment": "DEFECT: Home screen not showing AI-first input after login",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:13.280Z"
+    },
+    {
+      "step": 4,
+      "category": "HOME",
+      "title": "Old \"Plan New Journey with AI\" button removed",
+      "status": "PASSED",
+      "details": "Old button-only design is gone",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:13.280Z"
+    },
+    {
+      "step": 4,
+      "category": "HOME",
+      "title": "Welcome greeting present",
+      "status": "INFO",
+      "details": "Greeting not visible",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:13.280Z"
+    },
+    {
+      "step": 4,
+      "category": "HOME",
+      "title": "Input fields on home (post-login)",
+      "status": "INFO",
+      "details": "0 input(s) found",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:13.283Z"
+    },
+    {
+      "step": 5,
+      "category": "NL_INPUT",
+      "title": "NL Input Field Found & Filled",
+      "status": "FAILED",
+      "details": "Could not find or interact with NL input on home screen",
+      "assessment": "May be blocked by auth wall or wrong route",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:13.285Z"
+    },
+    {
+      "step": 5,
+      "category": "CONTENT",
+      "title": "Create Mysore Test Trip",
+      "status": "PASSED",
+      "details": "Trip ID: b75599fb-8ae1-4dce-b2ca-44f13ccecf2b",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:13.335Z"
+    },
+    {
+      "step": 5,
+      "category": "CONTENT",
+      "title": "Planning Proposal Request",
+      "status": "PASSED",
+      "details": "HTTP 201 | Status: failed | Failure: [google_places] Google Places API authentication or permissions failed.",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:52.105Z"
+    },
+    {
+      "step": 6,
+      "category": "CONTENT",
+      "title": "No Placeholder Content in Activities",
+      "status": "PASSED",
+      "details": "All 0 activities have specific names",
+      "assessment": "Sprint 17.5 prompt improvements working ✅",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:52.105Z"
+    },
+    {
+      "step": 6,
+      "category": "CONTENT",
+      "title": "INR Currency Used (Not USD)",
+      "status": "PASSED",
+      "details": "INR: 0, USD: 0 across 0 activities",
+      "assessment": "Currency localization correct ✅",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:52.105Z"
+    },
+    {
+      "step": 6,
+      "category": "CONTENT",
+      "title": "Named Venues (Place Names Present)",
+      "status": "FAILED",
+      "details": "0/0 activities have concrete place names",
+      "assessment": "Majority of activities have real venue names ✅",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:52.105Z"
+    },
+    {
+      "step": 6,
+      "category": "SAVE",
+      "title": "Accept Proposal",
+      "status": "SKIPPED",
+      "details": "Proposal status was 'failed' — cannot accept. Failure: [google_places] Google Places API authentication or permissions failed.",
+      "assessment": "Provider validation failure upstream prevents this step",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:52.105Z"
+    },
+    {
+      "step": 7,
+      "category": "TRIP_HUB",
+      "title": "Trip Hub / Your Journey Screen",
+      "status": "PASSED",
+      "details": "URL: /trips/b75599fb-8ae1-4dce-b2ca-44f13ccecf2b",
+      "assessment": "Checking for traveler-friendly language (not developer terminology)",
+      "screenshot": "10_trip_hub.png",
+      "timestamp": "2026-09-06T08:50:57.066Z"
+    },
+    {
+      "step": 7,
+      "category": "TRIP_HUB",
+      "title": "\"Your Journey\" section label",
+      "status": "FAILED",
+      "details": "\"Your Journey\" not found (old \"Travel Dashboard\" may still show)",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:57.069Z"
+    },
+    {
+      "step": 7,
+      "category": "TRIP_HUB",
+      "title": "No \"Travel Dashboard\" developer label",
+      "status": "PASSED",
+      "details": "\"Travel Dashboard\" removed",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:57.069Z"
+    },
+    {
+      "step": 7,
+      "category": "TRIP_HUB",
+      "title": "No raw proposal_id exposed to user",
+      "status": "PASSED",
+      "details": "No raw DB IDs visible",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:57.069Z"
+    },
+    {
+      "step": 7,
+      "category": "TRIP_HUB",
+      "title": "₹ symbol present in budget display",
+      "status": "INFO",
+      "details": "No ₹ visible (may not have budget set yet)",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:50:57.069Z"
+    },
+    {
+      "step": 8,
+      "category": "COPILOT",
+      "title": "Intent: \"I want to go to Bangalore\"",
+      "status": "PASSED",
+      "details": "Response: I notice your trip is currently set as 'Mysore Heritage & Food Tour'. Since Bangalore is about 3 hours from Mysore, woul",
+      "assessment": "Copilot understands travel intent ✅",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:51:22.119Z"
+    },
+    {
+      "step": 8,
+      "category": "COPILOT",
+      "title": "Intent: \"Make tomorrow more relaxed.\"",
+      "status": "PASSED",
+      "details": "Response: Your itinerary currently has no activities scheduled for tomorrow or any other day. If you'd like, I can help you plan a",
+      "assessment": "Copilot understands travel intent ✅",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:51:27.899Z"
+    },
+    {
+      "step": 8,
+      "category": "COPILOT",
+      "title": "Intent: \"Can we spend less tomorrow?\"",
+      "status": "PASSED",
+      "details": "Response: You currently don't have any activities or expenses scheduled for tomorrow in your itinerary or budget. If you'd like to",
+      "assessment": "Copilot understands travel intent ✅",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:52:04.395Z"
+    },
+    {
+      "step": 8,
+      "category": "COPILOT",
+      "title": "Intent: \"It's going to rain tomorrow.\"",
+      "status": "PASSED",
+      "details": "Response: Since it might rain tomorrow, indoor activities are a great option! Your itinerary is currently clear, so here are a few",
+      "assessment": "Copilot understands travel intent ✅",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:52:36.891Z"
+    },
+    {
+      "step": 8,
+      "category": "COPILOT",
+      "title": "AI Copilot Screen",
+      "status": "PASSED",
+      "details": "URL: /trips/b75599fb-8ae1-4dce-b2ca-44f13ccecf2b/assistant",
+      "assessment": "Checking context-aware prompt chips and chat interface",
+      "screenshot": "11_copilot_screen.png",
+      "timestamp": "2026-09-06T08:52:41.890Z"
+    },
+    {
+      "step": 8,
+      "category": "COPILOT",
+      "title": "Context-Aware Chips Present",
+      "status": "PASSED",
+      "details": "Chips reference actual itinerary (Day 1, timing, specific stops)",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:52:41.894Z"
+    },
+    {
+      "step": 9,
+      "category": "SECURITY",
+      "title": "Add Viewer Collaborator",
+      "status": "INFO",
+      "details": "HTTP 404",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:52:41.915Z"
+    },
+    {
+      "step": 9,
+      "category": "SECURITY",
+      "title": "Viewer Can Chat (Read)",
+      "status": "WARNING",
+      "details": "HTTP 401",
+      "assessment": "Viewers should be able to read/chat",
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:52:41.920Z"
+    },
+    {
+      "step": 9,
+      "category": "SECURITY",
+      "title": "Viewer Mutation Rejection",
+      "status": "SKIPPED",
+      "details": "No proposed action returned by copilot to test confirmation",
+      "assessment": null,
+      "screenshot": null,
+      "timestamp": "2026-09-06T08:53:09.112Z"
+    },
+    {
+      "step": 10,
+      "category": "ITINERARY",
+      "title": "Itinerary Screen",
+      "status": "PASSED",
+      "details": "Trip itinerary with saved stops",
+      "assessment": "Verifying INR costs, no placeholder content, real venue names",
+      "screenshot": "12_itinerary_screen.png",
+      "timestamp": "2026-09-06T08:53:14.074Z"
+    },
+    {
+      "step": 10,
+      "category": "HOME",
+      "title": "Home Screen Final State",
+      "status": "PASSED",
+      "details": "Final home screen capture",
+      "assessment": null,
+      "screenshot": "13_home_final.png",
+      "timestamp": "2026-09-06T08:53:18.179Z"
+    }
+  ],
+  "score": 8,
+  "scoreFactors": {
+    "AI input on home (no long form)": 2,
+    "No placeholder content": 2,
+    "INR currency (not USD)": 1,
+    "Copilot intent understanding": 2,
+    "Itinerary saves atomically": 0,
+    "RBAC enforced": 0,
+    "Traveler language (no dev terms)": 1
+  },
+  "elapsed": "261.4",
+  "tripId": "b75599fb-8ae1-4dce-b2ca-44f13ccecf2b",
+  "allActivities": [],
+  "propDays": [],
+  "proposal": {
+    "proposal_id": "f230583f-bb76-4fd2-8564-7278e3c67fb6",
+    "trip_id": "b75599fb-8ae1-4dce-b2ca-44f13ccecf2b",
+    "owner_id": "2605c4e3-0720-46b9-8670-5bd9c1b025e0",
+    "preferences": {
+      "destination": "Mysore, India",
+      "duration_days": 3,
+      "budget_level": "mid_range",
+      "interests": [
+        "history",
+        "food"
+      ],
+      "travel_style": "relaxed",
+      "special_requirements": "Family trip"
+    },
+    "status": "failed",
+    "result": null,
+    "failure_reason": "[google_places] Google Places API authentication or permissions failed.",
+    "expires_at": null,
+    "version": 3,
+    "created_at": "2026-09-06T08:50:13.350835Z",
+    "updated_at": "2026-09-06T08:50:52.074673Z",
+    "deleted_at": null
+  }
+}

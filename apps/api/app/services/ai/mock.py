@@ -39,9 +39,7 @@ class MockPlanningEngine:
     destination from the provided preferences. Thread-safe and stateless.
     """
 
-    async def generate_plan(
-        self, preferences: PlanningPreferences
-    ) -> PlanningResult:
+    async def generate_plan(self, preferences: PlanningPreferences) -> PlanningResult:
         """Generate a deterministic mock travel plan."""
         destination = preferences.destination
         duration = min(preferences.duration_days, 3)
@@ -69,8 +67,7 @@ class MockPlanningEngine:
                     day_number=day_num,
                     title=f"Day {day_num} — Discovering {destination}",
                     description=(
-                        f"A full day of exploration and local "
-                        f"experiences in {destination}."
+                        f"A full day of exploration and local experiences in {destination}."
                     ),
                     activities=activities,
                 )

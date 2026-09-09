@@ -60,6 +60,20 @@ from app.shared.domain.errors import (
     TravixError,
     ValidationError,
 )
+from app.modules.travel.realtime.application.broadcaster import (
+    ITripEventBroadcaster,
+)
+from app.modules.travel.realtime.domain.enums import (
+    EntityActionType,
+    EntityType,
+    RealtimeEventType,
+)
+from app.modules.travel.realtime.domain.value_objects.realtime_event import (
+    TripRealtimeEvent,
+)
+from app.modules.travel.realtime.infrastructure.dependencies import (
+    get_trip_event_broadcaster,
+)
 from app.shared.domain.event_publisher import EventPublisher
 from app.shared.domain.events import DomainEvent
 from app.shared.domain.result import Failure, Success
@@ -82,6 +96,7 @@ class BudgetService:
         event_publisher: EventPublisher,
         uuid_provider: UUIDProvider,
         clock: Clock,
+        event_broadcaster: ITripEventBroadcaster | None = None,
     ) -> None:
         self._repository = repository
         self._trip_repository = trip_repository
@@ -89,6 +104,15 @@ class BudgetService:
         self._event_publisher = event_publisher
         self._uuid_provider = uuid_provider
         self._clock = clock
+        self._broadcaster = event_broadcaster or get_trip_event_broadcaster()
+
+    async def _broadcast_event(self, trip_id: TripId, event: TripRealtimeEvent) -> None:
+        if self._broadcaster:
+            try:
+                await self._broadcaster.broadcast_to_trip(str(trip_id.value), event)
+            except Exception as exc:
+                logger.debug("Failed to broadcast real-time budget event: %s", exc)
+
 
     async def create_budget(self, command: CreateBudgetCommand) -> CreateBudgetResult:
         """Create a new budget for a trip."""
@@ -141,6 +165,19 @@ class BudgetService:
             return Failure(InfrastructureError("Failed to save budget.", cause=exc))
 
         await self._publish(budget.pop_events(), context="create_budget")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.BUDGET_UPDATED,
+                entity_type=EntityType.BUDGET,
+                entity_id=str(budget.budget_id.value),
+                action=EntityActionType.CREATED,
+                version=budget.version,
+                actor_id=str(requester_id.value),
+                payload={"budget_id": str(budget.budget_id.value)},
+            ),
+        )
         return Success(BudgetSummary.from_aggregate(budget))
 
     async def update_budget(self, command: UpdateBudgetCommand) -> UpdateBudgetResult:
@@ -190,6 +227,19 @@ class BudgetService:
             return Failure(InfrastructureError("Failed to update budget.", cause=exc))
 
         await self._publish(budget.pop_events(), context="update_budget")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.BUDGET_UPDATED,
+                entity_type=EntityType.BUDGET,
+                entity_id=str(budget.budget_id.value),
+                action=EntityActionType.UPDATED,
+                version=budget.version,
+                actor_id=str(requester_id.value),
+                payload={"budget_id": str(budget.budget_id.value)},
+            ),
+        )
         return Success(BudgetSummary.from_aggregate(budget))
 
     async def add_expense(self, command: AddExpenseCommand) -> AddExpenseResult:
@@ -235,6 +285,19 @@ class BudgetService:
             return Failure(InfrastructureError("Failed to add expense.", cause=exc))
 
         await self._publish(budget.pop_events(), context="add_expense")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.BUDGET_EXPENSE_CREATED,
+                entity_type=EntityType.EXPENSE,
+                entity_id=str(expense.entity_id.value),
+                action=EntityActionType.CREATED,
+                version=budget.version,
+                actor_id=str(requester_id.value),
+                payload={"expense_id": str(expense.entity_id.value), "title": expense.title, "amount": str(expense.amount.amount)},
+            ),
+        )
         return Success(ExpenseSummary.from_entity(expense))
 
     async def update_expense(self, command: UpdateExpenseCommand) -> UpdateExpenseResult:
@@ -292,6 +355,19 @@ class BudgetService:
             return Failure(InfrastructureError("Failed to update expense.", cause=exc))
 
         await self._publish(budget.pop_events(), context="update_expense")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.BUDGET_EXPENSE_UPDATED,
+                entity_type=EntityType.EXPENSE,
+                entity_id=str(expense_id.value),
+                action=EntityActionType.UPDATED,
+                version=budget.version,
+                actor_id=str(requester_id.value),
+                payload={"expense_id": str(expense_id.value)},
+            ),
+        )
         return Success(ExpenseSummary.from_entity(expense))
 
     async def delete_expense(self, command: DeleteExpenseCommand) -> DeleteExpenseResult:
@@ -320,7 +396,21 @@ class BudgetService:
             return Failure(InfrastructureError("Failed to delete expense.", cause=exc))
 
         await self._publish(budget.pop_events(), context="delete_expense")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.BUDGET_EXPENSE_DELETED,
+                entity_type=EntityType.EXPENSE,
+                entity_id=str(expense_id.value),
+                action=EntityActionType.DELETED,
+                version=budget.version,
+                actor_id=str(requester_id.value),
+                payload={"expense_id": str(expense_id.value)},
+            ),
+        )
         return Success(None)
+
 
     async def get_budget(self, query: GetBudgetQuery) -> GetBudgetResult:
         """Get the budget details."""

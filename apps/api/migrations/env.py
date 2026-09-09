@@ -31,10 +31,36 @@ from sqlalchemy import create_engine, pool
 from app.database import Base
 
 # ── Import all models so Alembic can detect schema changes ──────────────────
-# Add an import for each new model module as it is created:
-#   from app.modules.trips.models import Trip  # noqa: F401
-#   from app.modules.users.models import User  # noqa: F401
 from app.modules.locations.models import Location  # noqa: F401
+from app.modules.identity.authentication.infrastructure.models.auth_models import (  # noqa: F401
+    UserModel,
+    SessionModel,
+    RefreshTokenModel,
+)
+from app.modules.travel.trips.infrastructure.models.trip_model import TripModel  # noqa: F401
+from app.modules.travel.itinerary.infrastructure.models.itinerary_model import (  # noqa: F401
+    ItineraryModel,
+    ItineraryDayModel,
+    ItineraryItemModel,
+)
+from app.modules.travel.planning.infrastructure.models.proposal_model import TripProposalModel  # noqa: F401
+from app.modules.travel.budget.infrastructure.models.budget_model import (  # noqa: F401
+    TripBudgetModel,
+    BudgetCategoryModel,
+    ExpenseModel,
+)
+from app.modules.travel.sharing.infrastructure.models.sharing_models import (  # noqa: F401
+    TripCollaborationModel,
+    TripMemberModel,
+    InvitationModel,
+)
+from app.modules.travel.media.infrastructure.models.media_model import (  # noqa: F401
+    TripMediaCollectionModel,
+    MediaItemModel,
+)
+from app.modules.travel.recommendations.infrastructure.models.preferences_model import (  # noqa: F401
+    UserPreferencesModel,
+)
 # ────────────────────────────────────────────────────────────────────────────
 
 logger = logging.getLogger("alembic.env")

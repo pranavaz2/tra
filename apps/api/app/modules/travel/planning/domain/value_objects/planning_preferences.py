@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from decimal import Decimal
 
 from app.shared.domain.errors import ValidationError
 from app.shared.domain.value_object import ValueObject
@@ -22,6 +23,8 @@ class PlanningPreferences(ValueObject):
         interests:            Tuple of interest tags (e.g. 'history', 'food').
         travel_style:         One of: relaxed, balanced, active.
         special_requirements: Free-text requirements (dietary, accessibility, etc.).
+        currency:             Preferred cost currency (e.g. "INR", "USD"). Default: "INR".
+        target_budget:        Optional absolute budget target for the trip.
     """
 
     destination: str
@@ -30,6 +33,8 @@ class PlanningPreferences(ValueObject):
     interests: tuple[str, ...]
     travel_style: str
     special_requirements: str
+    currency: str = "INR"
+    target_budget: Decimal | None = None
 
     _VALID_BUDGET_LEVELS = frozenset({"budget", "mid_range", "luxury"})
     _VALID_TRAVEL_STYLES = frozenset({"relaxed", "balanced", "active"})

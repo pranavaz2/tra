@@ -53,6 +53,9 @@ class RefreshTokenHash(ValueObject):
         # Show first 16 chars as a correlation handle; not enough to reverse the hash.
         return f"RefreshTokenHash(sha256:{self.value[:16]}...)"
 
+    def __str__(self) -> str:
+        return self.value
+
     @classmethod
     def from_hex(cls, hex_str: str) -> "RefreshTokenHash":
         """Parse and normalise a hex string into a RefreshTokenHash."""

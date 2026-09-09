@@ -167,34 +167,33 @@ def get_refresh_token_hasher() -> RefreshTokenHasher:
 
 CurrentRefreshTokenHasher = Annotated[RefreshTokenHasher, Depends(get_refresh_token_hasher)]
 
+from app.dependencies import DatabaseSession
+from app.modules.identity.authentication.infrastructure.repositories.sql_auth_repository import (
+    SQLAlchemyAuthRepository,
+    SQLAlchemyRefreshTokenStore,
+    SQLAlchemySessionRepository,
+)
+from app.modules.identity.authentication.infrastructure.unit_of_work import (
+    InMemoryUnitOfWork,
+    SQLAlchemyUnitOfWork,
+)
+
 # ---------------------------------------------------------------------------
-# In-memory token store and session repository (dev/test)
-#
-# Replace with PostgreSQL-backed implementations in TASK-2.7:
-#   async def get_refresh_token_store(db=Depends(get_db_session)) -> RefreshTokenRepository:
-#       return PostgresRefreshTokenRepository(db)
+# SQLAlchemy token store and session repository (persisted)
 # ---------------------------------------------------------------------------
 
 _token_store_singleton = InMemoryRefreshTokenStore()
 _session_repo_singleton = InMemorySessionRepository()
 
 
-def get_refresh_token_store() -> RefreshTokenRepository:
-    """
-    Return the in-memory RefreshTokenRepository singleton.
-
-    TASK-2.7: Replace with PostgresRefreshTokenRepository(db_session).
-    """
-    return _token_store_singleton
+def get_refresh_token_store(db: DatabaseSession) -> RefreshTokenRepository:
+    """Return the SQLAlchemy RefreshTokenRepository backed by the request session."""
+    return SQLAlchemyRefreshTokenStore(db)
 
 
-def get_session_repository() -> SessionRepository:
-    """
-    Return the in-memory SessionRepository singleton.
-
-    TASK-2.7: Replace with PostgresSessionRepository(db_session).
-    """
-    return _session_repo_singleton
+def get_session_repository(db: DatabaseSession) -> SessionRepository:
+    """Return the SQLAlchemy SessionRepository backed by the request session."""
+    return SQLAlchemySessionRepository(db)
 
 
 CurrentRefreshTokenStore = Annotated[RefreshTokenRepository, Depends(get_refresh_token_store)]
@@ -230,20 +229,15 @@ Injectable RefreshTokenService. Override in tests:
 """
 
 # ---------------------------------------------------------------------------
-# In-memory AuthenticationRepository (dev/test placeholder)
-# Replace with PostgresAuthenticationRepository(db_session) in production.
+# AuthenticationRepository (persisted via PostgreSQL / SQLAlchemy)
 # ---------------------------------------------------------------------------
 
 _auth_repo_singleton = InMemoryAuthRepository()
 
 
-def get_auth_repository() -> AuthenticationRepository:
-    """
-    Return the in-memory AuthenticationRepository singleton.
-
-    Production: replace with PostgresAuthenticationRepository(db_session).
-    """
-    return _auth_repo_singleton
+def get_auth_repository(db: DatabaseSession) -> AuthenticationRepository:
+    """Return the SQLAlchemy AuthenticationRepository backed by the request session."""
+    return SQLAlchemyAuthRepository(db)
 
 
 CurrentAuthRepository = Annotated[AuthenticationRepository, Depends(get_auth_repository)]
@@ -271,9 +265,9 @@ def get_uuid_provider() -> UUIDProvider:
     return _build_uuid_provider()
 
 
-def get_unit_of_work() -> UnitOfWork:
-    """Return a fresh InMemoryUnitOfWork per request."""
-    return InMemoryUnitOfWork()
+def get_unit_of_work(db: DatabaseSession) -> UnitOfWork:
+    """Return a fresh SQLAlchemyUnitOfWork sharing the request-scoped session."""
+    return SQLAlchemyUnitOfWork(db)
 
 
 @lru_cache(maxsize=1)

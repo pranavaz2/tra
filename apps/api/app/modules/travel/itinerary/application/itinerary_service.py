@@ -50,6 +50,20 @@ from app.shared.domain.errors import (
     TravixError,
     ValidationError,
 )
+from app.modules.travel.realtime.application.broadcaster import (
+    ITripEventBroadcaster,
+)
+from app.modules.travel.realtime.domain.enums import (
+    EntityActionType,
+    EntityType,
+    RealtimeEventType,
+)
+from app.modules.travel.realtime.domain.value_objects.realtime_event import (
+    TripRealtimeEvent,
+)
+from app.modules.travel.realtime.infrastructure.dependencies import (
+    get_trip_event_broadcaster,
+)
 from app.shared.domain.event_publisher import EventPublisher
 from app.shared.domain.events import DomainEvent
 from app.shared.domain.result import Failure, Success
@@ -69,12 +83,22 @@ class ItineraryService:
         unit_of_work: UnitOfWork,
         event_publisher: EventPublisher,
         uuid_provider: UUIDProvider,
+        event_broadcaster: ITripEventBroadcaster | None = None,
     ) -> None:
         self._repository = repository
         self._trip_repository = trip_repository
         self._uow = unit_of_work
         self._event_publisher = event_publisher
         self._uuid_provider = uuid_provider
+        self._broadcaster = event_broadcaster or get_trip_event_broadcaster()
+
+    async def _broadcast_event(self, trip_id: TripId, event: TripRealtimeEvent) -> None:
+        if self._broadcaster:
+            try:
+                await self._broadcaster.broadcast_to_trip(str(trip_id.value), event)
+            except Exception as exc:
+                logger.debug("Failed to broadcast real-time event: %s", exc)
+
 
     async def get_itinerary(self, query: GetItineraryQuery) -> GetItineraryResult:
         """Fetch the itinerary for a trip, auto-creating an empty one if not found."""
@@ -173,9 +197,23 @@ class ItineraryService:
         except TravixError as exc:
             return Failure(exc)
         except Exception as exc:
+            logger.error("Failed to add day: %s", exc, exc_info=True)
             return Failure(InfrastructureError("Failed to add day.", cause=exc))
 
         await self._publish(itinerary.pop_events(), context="add_day")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.ITINERARY_DAY_CREATED,
+                entity_type=EntityType.DAY,
+                entity_id=str(day_id.value),
+                action=EntityActionType.CREATED,
+                version=itinerary.version,
+                actor_id=str(requester_id.value),
+                payload={"day_id": str(day_id.value), "day_number": command.day_number, "title": command.title},
+            ),
+        )
         return Success(self._to_dto(itinerary))
 
     async def update_day(self, command: UpdateItineraryDayCommand) -> UpdateItineraryDayResult:
@@ -222,6 +260,19 @@ class ItineraryService:
             return Failure(InfrastructureError("Failed to update day.", cause=exc))
 
         await self._publish(itinerary.pop_events(), context="update_day")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.ITINERARY_DAY_UPDATED,
+                entity_type=EntityType.DAY,
+                entity_id=str(day_id.value),
+                action=EntityActionType.UPDATED,
+                version=itinerary.version,
+                actor_id=str(requester_id.value),
+                payload={"day_id": str(day_id.value), "day_number": command.day_number, "title": command.title},
+            ),
+        )
         return Success(self._to_dto(itinerary))
 
     async def remove_day(self, command: RemoveItineraryDayCommand) -> RemoveItineraryDayResult:
@@ -263,6 +314,19 @@ class ItineraryService:
             return Failure(InfrastructureError("Failed to remove day.", cause=exc))
 
         await self._publish(itinerary.pop_events(), context="remove_day")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.ITINERARY_DAY_DELETED,
+                entity_type=EntityType.DAY,
+                entity_id=str(day_id.value),
+                action=EntityActionType.DELETED,
+                version=itinerary.version,
+                actor_id=str(requester_id.value),
+                payload={"day_id": str(day_id.value)},
+            ),
+        )
         return Success(self._to_dto(itinerary))
 
     async def add_item(self, command: AddItineraryItemCommand) -> AddItineraryItemResult:
@@ -319,6 +383,19 @@ class ItineraryService:
             return Failure(InfrastructureError("Failed to add item.", cause=exc))
 
         await self._publish(itinerary.pop_events(), context="add_item")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.ITINERARY_ITEM_CREATED,
+                entity_type=EntityType.ITEM,
+                entity_id=str(item_id.value),
+                action=EntityActionType.CREATED,
+                version=itinerary.version,
+                actor_id=str(requester_id.value),
+                payload={"item_id": str(item_id.value), "day_id": str(day_id.value), "title": command.title},
+            ),
+        )
         return Success(self._to_dto(itinerary))
 
     async def update_item(self, command: UpdateItineraryItemCommand) -> UpdateItineraryItemResult:
@@ -334,8 +411,10 @@ class ItineraryService:
             item_id = ItineraryItemId.from_str(command.item_id)
             day_id = ItineraryDayId.from_str(command.day_id) if command.day_id else None
             requester_id = UserId.from_str(command.requester_id)
-            title = ItemTitle(value=command.title)
-            item_type = ItineraryItemType(command.item_type)
+            title = ItemTitle(value=command.title) if command.title else None
+            item_type = (
+                ItineraryItemType(command.item_type) if command.item_type else None
+            )
             location_id = UUID(command.location_id) if command.location_id else None
         except (ValueError, TravixError) as exc:
             return Failure(ValidationError(str(exc)))
@@ -375,6 +454,19 @@ class ItineraryService:
             return Failure(InfrastructureError("Failed to update item.", cause=exc))
 
         await self._publish(itinerary.pop_events(), context="update_item")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.ITINERARY_ITEM_UPDATED,
+                entity_type=EntityType.ITEM,
+                entity_id=str(item_id.value),
+                action=EntityActionType.UPDATED,
+                version=itinerary.version,
+                actor_id=str(requester_id.value),
+                payload={"item_id": str(item_id.value), "title": command.title},
+            ),
+        )
         return Success(self._to_dto(itinerary))
 
     async def remove_item(self, command: RemoveItineraryItemCommand) -> RemoveItineraryItemResult:
@@ -416,6 +508,19 @@ class ItineraryService:
             return Failure(InfrastructureError("Failed to remove item.", cause=exc))
 
         await self._publish(itinerary.pop_events(), context="remove_item")
+        await self._broadcast_event(
+            trip_id,
+            TripRealtimeEvent.create(
+                trip_id=str(trip_id.value),
+                event_type=RealtimeEventType.ITINERARY_ITEM_DELETED,
+                entity_type=EntityType.ITEM,
+                entity_id=str(item_id.value),
+                action=EntityActionType.DELETED,
+                version=itinerary.version,
+                actor_id=str(requester_id.value),
+                payload={"item_id": str(item_id.value)},
+            ),
+        )
         return Success(self._to_dto(itinerary))
 
     async def _check_ownership(self, trip_id: TripId, requester_id: UserId) -> None:

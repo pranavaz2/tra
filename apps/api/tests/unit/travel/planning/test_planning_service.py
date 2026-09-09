@@ -37,10 +37,11 @@ from app.modules.travel.trips.domain.entities.trip import Trip
 from app.modules.travel.trips.domain.value_objects.trip_id import TripId
 from app.modules.travel.trips.domain.value_objects.trip_title import TripTitle
 from app.services.ai.mock import MockPlanningEngine
+from app.modules.travel.planning.domain.errors import InvalidProposalStatusTransitionError
 from app.shared.domain.errors import ForbiddenError
 from app.shared.domain.events import DomainEvent
 from app.shared.domain.result import Failure, Success
-from app.shared.domain.uuid_provider import FixedUUIDProvider
+from app.shared.domain.uuid_provider import FixedUUIDProvider, StandardUUIDProvider
 from app.shared.infrastructure.clock import FixedClock
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -157,6 +158,26 @@ class _InMemoryEventPublisher:
         self.published.extend(events)
 
 
+class InMemoryItineraryRepository:
+    def __init__(self) -> None:
+        self._store: dict[UUID, Itinerary] = {}
+
+    async def find_by_id(self, itinerary_id: ItineraryId) -> Itinerary | None:
+        return self._store.get(itinerary_id.value)
+
+    async def find_by_trip_id(self, trip_id: TripId) -> Itinerary | None:
+        for itin in self._store.values():
+            if itin.trip_id == trip_id and not itin.is_deleted:
+                return itin
+        return None
+
+    async def save(self, itinerary: Itinerary) -> None:
+        self._store[itinerary.itinerary_id.value] = itinerary
+
+    async def delete(self, itinerary_id: ItineraryId) -> None:
+        self._store.pop(itinerary_id.value, None)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures & Setup Helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -171,6 +192,9 @@ FIXED_TIME = datetime(2026, 7, 10, 12, 0, 0, tzinfo=UTC)
 def _make_service(
     *,
     proposal_uuid: UUID = FIXED_PROPOSAL_UUID,
+    itin_repo: InMemoryItineraryRepository | None = None,
+    uuid_provider: Any = None,
+    uow: InMemoryUnitOfWork | None = None,
 ) -> tuple[
     PlanningService,
     InMemoryTripProposalRepository,
@@ -180,15 +204,16 @@ def _make_service(
     repo = InMemoryTripProposalRepository()
     trip_repo = InMemoryTripRepository()
     pub = _InMemoryEventPublisher()
-    uow = InMemoryUnitOfWork()
+    actual_uow = uow or InMemoryUnitOfWork()
     service = PlanningService(
         repository=repo,
         trip_repository=trip_repo,
         planning_engine=MockPlanningEngine(),
-        unit_of_work=uow,
+        unit_of_work=actual_uow,
         event_publisher=pub,
-        uuid_provider=FixedUUIDProvider([proposal_uuid]),
+        uuid_provider=uuid_provider or FixedUUIDProvider([proposal_uuid]),
         clock=FixedClock(FIXED_TIME),
+        itinerary_repository=itin_repo,
     )
     return service, repo, trip_repo, pub
 
@@ -398,3 +423,200 @@ async def test_get_proposal_lazy_expiry() -> None:
     # Check that status was updated in repository as well
     updated = await repo.find_by_id(proposal_id)
     assert updated.status == ProposalStatus.EXPIRED
+
+
+@pytest.mark.asyncio
+async def test_accept_proposal_applies_to_itinerary_atomically() -> None:
+    itin_repo = InMemoryItineraryRepository()
+    service, repo, _trip_repo, pub = _make_service(
+        itin_repo=itin_repo,
+        uuid_provider=StandardUUIDProvider(),
+    )
+
+    proposal_id = ProposalId(value=FIXED_PROPOSAL_UUID)
+    trip_id = TripId(value=uuid.uuid4())
+    proposal = TripProposal.create(
+        proposal_id=proposal_id,
+        trip_id=trip_id,
+        owner_id=UserId.from_str(OWNER_ID),
+        preferences=PlanningPreferences(
+            destination="Rome",
+            duration_days=3,
+            budget_level="mid_range",
+            interests=(),
+            travel_style="balanced",
+            special_requirements="",
+        ),
+    )
+    proposal.start_generation()
+    plan_result = await MockPlanningEngine().generate_plan(proposal.preferences)
+    proposal.complete_generation(
+        result=plan_result,
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
+    )
+    await repo.save(proposal)
+
+    # Accept proposal with apply_to_itinerary=True
+    cmd = AcceptProposalCommand(
+        proposal_id=str(FIXED_PROPOSAL_UUID),
+        requester_id=OWNER_ID,
+        apply_to_itinerary=True,
+    )
+
+    result = await service.accept_proposal(cmd)
+    assert isinstance(result, Success)
+    assert result.value.status == ProposalStatus.ACCEPTED
+
+    # Verify itinerary was created and populated with 3 days
+    itinerary = await itin_repo.find_by_trip_id(trip_id)
+    assert itinerary is not None
+    assert len(itinerary.days) == 3
+    # Check that day 1 has activities from mock planning engine
+    assert len(itinerary.days[0].items) == 2
+    assert "exploration" in itinerary.days[0].items[0].title.value.lower()
+
+
+@pytest.mark.asyncio
+async def test_accept_proposal_failure_during_application_rolls_back() -> None:
+    class FailingItineraryRepository(InMemoryItineraryRepository):
+        async def save(self, itinerary: Itinerary) -> None:
+            raise RuntimeError("Database write error during itinerary persistence")
+
+    failing_repo = FailingItineraryRepository()
+    uow = InMemoryUnitOfWork()
+    service, repo, _trip_repo, pub = _make_service(
+        itin_repo=failing_repo,
+        uuid_provider=StandardUUIDProvider(),
+        uow=uow,
+    )
+
+    proposal_id = ProposalId(value=FIXED_PROPOSAL_UUID)
+    trip_id = TripId(value=uuid.uuid4())
+    proposal = TripProposal.create(
+        proposal_id=proposal_id,
+        trip_id=trip_id,
+        owner_id=UserId.from_str(OWNER_ID),
+        preferences=PlanningPreferences(
+            destination="Rome",
+            duration_days=2,
+            budget_level="mid_range",
+            interests=(),
+            travel_style="balanced",
+            special_requirements="",
+        ),
+    )
+    proposal.start_generation()
+    plan_result = await MockPlanningEngine().generate_plan(proposal.preferences)
+    proposal.complete_generation(
+        result=plan_result,
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
+    )
+    await repo.save(proposal)
+
+    cmd = AcceptProposalCommand(
+        proposal_id=str(FIXED_PROPOSAL_UUID),
+        requester_id=OWNER_ID,
+        apply_to_itinerary=True,
+    )
+
+    result = await service.accept_proposal(cmd)
+    assert isinstance(result, Failure)
+    assert uow.committed is False
+    assert uow.rolled_back is True
+    assert len(pub.published) == 0
+
+
+@pytest.mark.asyncio
+async def test_accept_proposal_unauthorized_and_invalid_state() -> None:
+    itin_repo = InMemoryItineraryRepository()
+    service, repo, _trip_repo, _pub = _make_service(
+        itin_repo=itin_repo,
+        uuid_provider=StandardUUIDProvider(),
+    )
+
+    proposal_id = ProposalId(value=FIXED_PROPOSAL_UUID)
+    trip_id = TripId(value=uuid.uuid4())
+    proposal = TripProposal.create(
+        proposal_id=proposal_id,
+        trip_id=trip_id,
+        owner_id=UserId.from_str(OWNER_ID),
+        preferences=PlanningPreferences(
+            destination="Rome",
+            duration_days=2,
+            budget_level="mid_range",
+            interests=(),
+            travel_style="balanced",
+            special_requirements="",
+        ),
+    )
+    # Not yet generated (status is QUEUED)
+    await repo.save(proposal)
+
+    # 1. Unauthorized user attempt
+    unauth_cmd = AcceptProposalCommand(
+        proposal_id=str(FIXED_PROPOSAL_UUID),
+        requester_id=OTHER_USER_ID,
+        apply_to_itinerary=True,
+    )
+    result_unauth = await service.accept_proposal(unauth_cmd)
+    assert isinstance(result_unauth, Failure)
+    assert isinstance(result_unauth.error, ForbiddenError)
+
+    # 2. Owner attempt while in invalid state (QUEUED, cannot transition to ACCEPTED)
+    invalid_cmd = AcceptProposalCommand(
+        proposal_id=str(FIXED_PROPOSAL_UUID),
+        requester_id=OWNER_ID,
+        apply_to_itinerary=True,
+    )
+    result_invalid = await service.accept_proposal(invalid_cmd)
+    assert isinstance(result_invalid, Failure)
+    assert isinstance(result_invalid.error, InvalidProposalStatusTransitionError)
+
+    # Ensure no itinerary was created
+    assert await itin_repo.find_by_trip_id(trip_id) is None
+
+
+@pytest.mark.asyncio
+async def test_accept_proposal_without_itinerary_application_backward_compat() -> None:
+    itin_repo = InMemoryItineraryRepository()
+    service, repo, _trip_repo, pub = _make_service(
+        itin_repo=itin_repo,
+        uuid_provider=StandardUUIDProvider(),
+    )
+
+    proposal_id = ProposalId(value=FIXED_PROPOSAL_UUID)
+    trip_id = TripId(value=uuid.uuid4())
+    proposal = TripProposal.create(
+        proposal_id=proposal_id,
+        trip_id=trip_id,
+        owner_id=UserId.from_str(OWNER_ID),
+        preferences=PlanningPreferences(
+            destination="Tokyo",
+            duration_days=1,
+            budget_level="budget",
+            interests=(),
+            travel_style="relaxed",
+            special_requirements="",
+        ),
+    )
+    proposal.start_generation()
+    plan_result = await MockPlanningEngine().generate_plan(proposal.preferences)
+    proposal.complete_generation(
+        result=plan_result,
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
+    )
+    await repo.save(proposal)
+
+    # Explicitly set apply_to_itinerary=False (backward compatibility)
+    cmd = AcceptProposalCommand(
+        proposal_id=str(FIXED_PROPOSAL_UUID),
+        requester_id=OWNER_ID,
+        apply_to_itinerary=False,
+    )
+
+    result = await service.accept_proposal(cmd)
+    assert isinstance(result, Success)
+    assert result.value.status == ProposalStatus.ACCEPTED
+
+    # Itinerary should NOT have been created
+    assert await itin_repo.find_by_trip_id(trip_id) is None

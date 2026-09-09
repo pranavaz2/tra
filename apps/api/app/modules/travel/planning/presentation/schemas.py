@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,7 +18,7 @@ from app.modules.travel.planning.domain.value_objects.planning_result import (
 T = TypeVar("T")
 
 
-class DataEnvelope[T](BaseModel):
+class DataEnvelope(BaseModel, Generic[T]):
     """Standard success data envelope wrapper."""
 
     model_config = ConfigDict(populate_by_name=True)
@@ -90,6 +90,25 @@ class ProposalCreateRequest(BaseModel):
         ),
     ] = ""
 
+    currency: Annotated[
+        str,
+        Field(
+            default="INR",
+            max_length=3,
+            description="Preferred cost currency code (e.g. INR, USD, EUR). Default: INR.",
+            examples=["INR"],
+        ),
+    ] = "INR"
+
+    target_budget: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Optional total trip budget as a numeric string (e.g. '15000').",
+            examples=["15000"],
+        ),
+    ] = None
+
 
 # ──────────────────────────────────────────────────────────────────────────── #
 # Response Schemas                                                             #
@@ -129,7 +148,14 @@ class ProposedActivityResponse(BaseModel):
     description: str
     category: str
     duration_minutes: int
-    estimated_cost: str | None
+    estimated_cost: str | None = None
+    provider_place_id: str | None = None
+    place_name: str | None = None
+    formatted_address: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    rating: float | None = None
+    is_verified: bool = True
 
 
 class ProposedDayResponse(BaseModel):
@@ -168,6 +194,13 @@ class PlanningResultResponse(BaseModel):
                         category=a.category,
                         duration_minutes=a.duration_minutes,
                         estimated_cost=a.estimated_cost,
+                        provider_place_id=getattr(a, "provider_place_id", None),
+                        place_name=getattr(a, "place_name", None),
+                        formatted_address=getattr(a, "formatted_address", None),
+                        latitude=getattr(a, "latitude", None),
+                        longitude=getattr(a, "longitude", None),
+                        rating=getattr(a, "rating", None),
+                        is_verified=getattr(a, "is_verified", True),
                     )
                 )
             days.append(

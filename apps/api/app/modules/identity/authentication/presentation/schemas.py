@@ -521,3 +521,41 @@ class RegisterResponse(BaseModel):
             ),
         ),
     ] = None
+
+
+# ──────────────────────────────────────────────────────────────────────────── #
+# POST /refresh and POST /logout — Request schemas                             #
+# ──────────────────────────────────────────────────────────────────────────── #
+
+
+class RefreshRequest(BaseModel):
+    """POST /api/v1/auth/refresh request body."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    refresh_token: Annotated[
+        str,
+        Field(
+            min_length=1,
+            max_length=128,
+            description="Previously issued refresh token.",
+            examples=["8f14e45f-ceea-467a-a866-051f0ee75a5e"],
+        ),
+    ]
+
+
+class LogoutRequest(BaseModel):
+    """POST /api/v1/auth/logout request body."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    refresh_token: Annotated[
+        str | None,
+        Field(
+            default=None,
+            max_length=128,
+            description="Optional refresh token to revoke alongside session.",
+            examples=["8f14e45f-ceea-467a-a866-051f0ee75a5e"],
+        ),
+    ] = None
+

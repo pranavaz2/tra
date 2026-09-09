@@ -42,6 +42,12 @@ from app.modules.identity.authentication.domain.errors import (
     InvalidCredentialsError,
     InvalidEmailError,
     PasswordHashingError,
+    RefreshTokenExpiredError,
+    RefreshTokenNotFoundError,
+    RefreshTokenReuseError,
+    RefreshTokenRevokedError,
+    SessionExpiredError,
+    SessionRevokedError,
     WeakPasswordError,
 )
 from app.shared.domain.errors import InfrastructureError, TravixError, UnauthorizedError
@@ -450,3 +456,130 @@ def map_login_failure(
             instance=instance,
         ),
     )
+
+
+_REFRESH_INSTANCE = "/api/v1/auth/refresh"
+_LOGOUT_INSTANCE = "/api/v1/auth/logout"
+
+
+def map_refresh_failure(
+    error: TravixError,
+    *,
+    trace_id: str,
+    instance: str = _REFRESH_INSTANCE,
+) -> JSONResponse:
+    """Map a TravixError from token refresh/rotation to an RFC 7807 JSONResponse."""
+    if isinstance(error, RefreshTokenReuseError):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content=_auth_problem(
+                slug="refresh-reused",
+                title="Refresh Token Reuse Detected",
+                http_status=status.HTTP_401_UNAUTHORIZED,
+                detail=(
+                    "A previously used refresh token was submitted. "
+                    "All sessions have been revoked for security. Please log in again."
+                ),
+                error_code="AUTH_REFRESH_REUSED",
+                trace_id=trace_id,
+                instance=instance,
+            ),
+        )
+
+    if isinstance(error, RefreshTokenExpiredError):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content=_auth_problem(
+                slug="token-expired",
+                title="Refresh Token Expired",
+                http_status=status.HTTP_401_UNAUTHORIZED,
+                detail="The provided refresh token has expired. Please log in again.",
+                error_code="AUTH_REFRESH_TOKEN_EXPIRED",
+                trace_id=trace_id,
+                instance=instance,
+            ),
+        )
+
+    if isinstance(error, RefreshTokenRevokedError):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content=_auth_problem(
+                slug="token-revoked",
+                title="Refresh Token Revoked",
+                http_status=status.HTTP_401_UNAUTHORIZED,
+                detail="The provided refresh token has been revoked.",
+                error_code="AUTH_REFRESH_TOKEN_REVOKED",
+                trace_id=trace_id,
+                instance=instance,
+            ),
+        )
+
+    if isinstance(error, RefreshTokenNotFoundError):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content=_auth_problem(
+                slug="invalid-refresh-token",
+                title="Invalid Refresh Token",
+                http_status=status.HTTP_401_UNAUTHORIZED,
+                detail="The provided refresh token is invalid.",
+                error_code="AUTH_REFRESH_TOKEN_INVALID",
+                trace_id=trace_id,
+                instance=instance,
+            ),
+        )
+
+    if isinstance(error, (SessionExpiredError, SessionRevokedError)):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content=_auth_problem(
+                slug="session-revoked",
+                title="Session Revoked",
+                http_status=status.HTTP_401_UNAUTHORIZED,
+                detail="The session associated with this token is no longer active.",
+                error_code="AUTH_SESSION_REVOKED",
+                trace_id=trace_id,
+                instance=instance,
+            ),
+        )
+
+    if isinstance(error, AccountDisabledError):
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=_auth_problem(
+                slug="account-disabled",
+                title="Account Disabled",
+                http_status=status.HTTP_403_FORBIDDEN,
+                detail="This account has been disabled. Please contact support.",
+                error_code="AUTH_ACCOUNT_DISABLED",
+                trace_id=trace_id,
+                instance=instance,
+            ),
+        )
+
+    if isinstance(error, InfrastructureError):
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=_auth_problem(
+                slug="service-unavailable",
+                title="Service Unavailable",
+                http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Token refresh is temporarily unavailable. Please try again shortly.",
+                error_code="AUTH_SERVICE_UNAVAILABLE",
+                trace_id=trace_id,
+                instance=instance,
+            ),
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=_auth_problem(
+            slug="internal-server-error",
+            title="Internal Server Error",
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred. Please try again later.",
+            error_code="AUTH_INTERNAL_ERROR",
+            trace_id=trace_id,
+            instance=instance,
+        ),
+    )
+

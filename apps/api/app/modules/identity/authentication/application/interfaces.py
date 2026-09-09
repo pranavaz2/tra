@@ -244,6 +244,7 @@ class RefreshTokenService(Protocol):
         session_id: SessionId,
         user_id: UserId,
         expires_at: datetime,
+        record_id: RefreshTokenId | None = None,
         device_id: str | None = None,
         device_name: str | None = None,
         platform: str | None = None,

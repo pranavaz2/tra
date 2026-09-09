@@ -83,6 +83,8 @@ async def request_proposal(
         interests=body.interests,
         travel_style=body.travel_style,
         special_requirements=body.special_requirements,
+        currency=getattr(body, "currency", "INR") or "INR",
+        target_budget=getattr(body, "target_budget", None),
     )
 
     result = await handler.handle(command)
@@ -206,12 +208,20 @@ async def accept_proposal(
     proposal_id: str,
     auth: RequireAuthentication,
     handler: CurrentAcceptProposalHandler,
+    apply_to_itinerary: bool = Query(
+        True,
+        description="Whether to automatically populate the trip itinerary with the proposal days and activities.",
+    ),
 ) -> Response:
-    """Accept an generated travel proposal."""
+    """Accept an generated travel proposal and optionally apply to itinerary."""
     trace_id = get_request_id() or ""
     instance = f"{_PLANNING_BASE}/proposals/{proposal_id}/accept"
 
-    command = AcceptProposalCommand(proposal_id=proposal_id, requester_id=auth.user_id)
+    command = AcceptProposalCommand(
+        proposal_id=proposal_id,
+        requester_id=auth.user_id,
+        apply_to_itinerary=apply_to_itinerary,
+    )
     result = await handler.handle(command)
 
     match result:

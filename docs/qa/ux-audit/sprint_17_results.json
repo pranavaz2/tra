@@ -1,0 +1,176 @@
+{
+  "passed": true,
+  "checks_count": 17,
+  "observations": [
+    {
+      "step": 1,
+      "category": "AUTH",
+      "title": "Owner Registration & JWT Minting",
+      "status": "PASSED",
+      "details": "User: copilot_owner_1788628581307@travix.ai",
+      "assessment": "Secure auth token acquired",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:21.391Z"
+    },
+    {
+      "step": 2,
+      "category": "AUTH",
+      "title": "Viewer Registration & JWT Minting",
+      "status": "PASSED",
+      "details": "User: copilot_viewer_1788628581307@travix.ai",
+      "assessment": "Second user registered for RBAC testing",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:21.549Z"
+    },
+    {
+      "step": 3,
+      "category": "TRIP",
+      "title": "Create Trip for Copilot Refinement",
+      "status": "PASSED",
+      "details": "Trip ID: 2efdbe81-5588-4c10-bff8-9e029f168f77",
+      "assessment": "Trip initialized with 3 days in Mysore",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:21.564Z"
+    },
+    {
+      "step": 4,
+      "category": "ITINERARY",
+      "title": "Populate Itinerary with 4 Activities",
+      "status": "PASSED",
+      "details": "Day 1 (14ff51f6-adbf-4caf-8f3d-359ef0bcc65f) populated with Palace, Mylari, Chamundi, Sound & Light",
+      "assessment": "Rich context ready for natural-language refinement",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:21.674Z"
+    },
+    {
+      "step": 5,
+      "category": "COPILOT",
+      "title": "Pacing Refinement: \"Day 2 is too busy\"",
+      "status": "PASSED",
+      "details": "Optimize Day 1 for relaxed pacing",
+      "assessment": "Action: propose_itinerary_change - Rationale: Introduces a 2-hour afternoon leisure window to eliminate travel fatigue.",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:28.837Z"
+    },
+    {
+      "step": 6,
+      "category": "COPILOT",
+      "title": "Nearby Replacement: \"Replace the palace\"",
+      "status": "PASSED",
+      "details": "Replace 'Mysore Palace Tour' with nearby 'Jaganmohan Palace Art Gallery'",
+      "assessment": "Replaces with verified museum nearby. Transit impact: Saves 15 minutes of transit time.",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:35.869Z"
+    },
+    {
+      "step": 7,
+      "category": "COPILOT",
+      "title": "Budget Optimization: \"Can we spend less tomorrow?\"",
+      "status": "PASSED",
+      "details": "Replace 'Fine Dining Experience' with budget-friendly 'Historic Heritage Walk & Local Street Food'",
+      "assessment": "Rationale: Optimizes itinerary costs for Day 2 to preserve trip budget limits. - Impact: Saves approximately ₹2,700.",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:39.853Z"
+    },
+    {
+      "step": 8,
+      "category": "COPILOT",
+      "title": "Weather-Aware Adaptation: \"It's going to rain tomorrow\"",
+      "status": "PASSED",
+      "details": "Replace 'Outdoor Sightseeing Tour' with indoor 'Chamundeshwari Art & Heritage Museum'",
+      "assessment": "Replaces outdoor Chamundi Hill with indoor Art Gallery. Note: undefined",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:41.541Z"
+    },
+    {
+      "step": 9,
+      "category": "COPILOT",
+      "title": "Schedule Reschedule: \"Move lunch closer\"",
+      "status": "PASSED",
+      "details": "Reschedule 'Lunch at Vinayaka Mylari' to 13:00 - 14:15",
+      "assessment": "Reschedules lunch to 13:00 to eliminate transit gap. Transit impact: Reduces transit wait time by 45 minutes.",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:47.003Z"
+    },
+    {
+      "step": 10,
+      "category": "COPILOT",
+      "title": "Free Time Expansion: \"Remove last activity\"",
+      "status": "PASSED",
+      "details": "Remove 'Palace Sound & Light Show' from Day 1",
+      "assessment": "Frees up evening schedule: Frees up evening schedule for spontaneous dining and relaxation.",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:51.820Z"
+    },
+    {
+      "step": 11,
+      "category": "MUTATION",
+      "title": "Save to My Trip Execution (Reschedule)",
+      "status": "PASSED",
+      "details": "Action ecd6a940-864b-4f40-8705-3906a40adca8 APPLIED",
+      "assessment": "Itinerary updated atomically inside domain UoW transaction",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:51.853Z"
+    },
+    {
+      "step": 12,
+      "category": "MUTATION",
+      "title": "Reject Action Proposal (Dismissal)",
+      "status": "PASSED",
+      "details": "Action 2cfbfd9e-acf9-42ef-851d-fb7db3c40801 REJECTED",
+      "assessment": "Proposal safely marked REJECTED without modifying itinerary",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:51.863Z"
+    },
+    {
+      "step": 13,
+      "category": "SECURITY",
+      "title": "Viewer Mutation Rejection (403 Forbidden)",
+      "status": "PASSED",
+      "details": "HTTP 403 Forbidden",
+      "assessment": "Read-only viewers are strictly blocked from mutating trip state",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:51.875Z"
+    },
+    {
+      "step": 14,
+      "category": "CONCURRENCY",
+      "title": "Optimistic Locking & Duplicate Confirmation Guard",
+      "status": "PASSED",
+      "details": "HTTP 409",
+      "assessment": "Prevented duplicate or conflicting mutation application",
+      "screenshot": null,
+      "timestamp": "2026-09-05T17:16:51.886Z"
+    },
+    {
+      "step": 15,
+      "category": "UI",
+      "title": "Mobile Home View",
+      "status": "PASSED",
+      "details": "Initial loaded state of mobile web app",
+      "assessment": "Clean responsive mobile container",
+      "screenshot": "01_mobile_home_page.png",
+      "timestamp": "2026-09-05T17:16:55.459Z"
+    },
+    {
+      "step": 16,
+      "category": "UI",
+      "title": "Trip Details Hub",
+      "status": "PASSED",
+      "details": "Trip Hub with Copilot Access and Schedule overview",
+      "assessment": "Grounded trip controls",
+      "screenshot": "02_trip_hub_dashboard.png",
+      "timestamp": "2026-09-05T17:16:58.906Z"
+    },
+    {
+      "step": 17,
+      "category": "UI",
+      "title": "Intelligent Trip Copilot 2.0 View",
+      "status": "PASSED",
+      "details": "Grounded conversational itinerary copilot with action cards",
+      "assessment": "Rich prompt chips, rationale cards, and action buttons",
+      "screenshot": "03_intelligent_trip_copilot.png",
+      "timestamp": "2026-09-05T17:17:02.812Z"
+    }
+  ]
+}

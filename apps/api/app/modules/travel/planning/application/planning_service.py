@@ -3,11 +3,22 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Sequence
 from datetime import timedelta
+from decimal import Decimal
 
 from app.core.pagination import decode_cursor, encode_cursor
 from app.modules.identity.authentication.domain.value_objects.user_id import UserId
+from app.modules.travel.itinerary.domain.entities.itinerary import Itinerary
+from app.modules.travel.itinerary.domain.repositories.interfaces import (
+    IItineraryRepository,
+)
+from app.modules.travel.itinerary.domain.value_objects.day_id import ItineraryDayId
+from app.modules.travel.itinerary.domain.value_objects.item_id import ItineraryItemId
+from app.modules.travel.itinerary.domain.value_objects.item_title import ItemTitle
+from app.modules.travel.itinerary.domain.value_objects.item_type import ItineraryItemType
+from app.modules.travel.itinerary.domain.value_objects.itinerary_id import ItineraryId
 from app.modules.travel.planning.application.commands import (
     AcceptProposalCommand,
     RejectProposalCommand,
@@ -78,6 +89,7 @@ class PlanningService:
         event_publisher: EventPublisher,
         uuid_provider: UUIDProvider,
         clock: Clock,
+        itinerary_repository: IItineraryRepository | None = None,
     ) -> None:
         self._repository = repository
         self._trip_repository = trip_repository
@@ -86,6 +98,7 @@ class PlanningService:
         self._event_publisher = event_publisher
         self._uuid_provider = uuid_provider
         self._clock = clock
+        self._itinerary_repository = itinerary_repository
 
     async def request_proposal(
         self, command: RequestProposalCommand
@@ -107,6 +120,9 @@ class PlanningService:
         try:
             trip_id = TripId.from_str(command.trip_id)
             requester_id = UserId.from_str(command.requester_id)
+            target_budget: Decimal | None = None
+            if command.target_budget:
+                target_budget = _parse_cost_to_decimal(command.target_budget)
             preferences = PlanningPreferences(
                 destination=command.destination,
                 duration_days=command.duration_days,
@@ -114,6 +130,8 @@ class PlanningService:
                 interests=tuple(command.interests),
                 travel_style=command.travel_style,
                 special_requirements=command.special_requirements,
+                currency=command.currency or "INR",
+                target_budget=target_budget,
             )
         except TravixError as exc:
             return Failure(exc)
@@ -193,7 +211,7 @@ class PlanningService:
         return Success(ProposalSummary.from_aggregate(proposal))
 
     async def accept_proposal(self, command: AcceptProposalCommand) -> AcceptProposalResult:
-        """Accept a generated proposal."""
+        """Accept a generated proposal and optionally populate the itinerary atomically."""
         logger.info("Accepting proposal", extra={"proposal_id": command.proposal_id})
 
         try:
@@ -202,6 +220,7 @@ class PlanningService:
         except ValueError as exc:
             return Failure(ValidationError(str(exc)))
 
+        itinerary = None
         try:
             async with self._uow:
                 proposal = await self._repository.find_by_id(proposal_id)
@@ -212,13 +231,68 @@ class PlanningService:
 
                 proposal.accept()
                 await self._repository.save(proposal)
+
+                # Atomically apply to itinerary if requested and repository is configured
+                if command.apply_to_itinerary and self._itinerary_repository:
+                    itinerary = await self._itinerary_repository.find_by_trip_id(proposal.trip_id)
+                    if itinerary is None or itinerary.is_deleted:
+                        itinerary_id = ItineraryId(value=self._uuid_provider.generate())
+                        itinerary = Itinerary.create(itinerary_id=itinerary_id, trip_id=proposal.trip_id)
+
+                    if proposal.result and proposal.result.days:
+                        for proposed_day in proposal.result.days:
+                            existing_day = next(
+                                (d for d in itinerary.days if d.day_number == proposed_day.day_number),
+                                None,
+                            )
+                            if existing_day is None:
+                                day_id = ItineraryDayId(value=self._uuid_provider.generate())
+                                target_day = itinerary.add_day(
+                                    day_id=day_id,
+                                    day_number=proposed_day.day_number,
+                                    title=proposed_day.title or f"Day {proposed_day.day_number}",
+                                )
+                            else:
+                                target_day = existing_day
+
+                            for act in proposed_day.activities:
+                                item_id = ItineraryItemId(value=self._uuid_provider.generate())
+                                item_type = _map_category_to_item_type(act.category)
+                                desc = act.description or ""
+                                if act.formatted_address:
+                                    desc += f"\n📍 {act.formatted_address}"
+                                if act.rating:
+                                    desc += f" (★ {act.rating:.1f})"
+                                cost_val = _parse_cost_to_decimal(act.estimated_cost)
+                                # Detect currency from the cost string; fall back to preferences currency
+                                item_currency = (
+                                    _detect_currency(act.estimated_cost, proposal.preferences.currency)
+                                    if cost_val is not None
+                                    else None
+                                )
+                                itinerary.add_item(
+                                    item_id=item_id,
+                                    day_id=target_day.entity_id,
+                                    title=ItemTitle(act.place_name or act.title),
+                                    item_type=item_type,
+                                    description=desc.strip() or None,
+                                    cost=cost_val,
+                                    currency=item_currency,
+                                )
+
+                    await self._itinerary_repository.save(itinerary)
+
                 await self._uow.commit()
         except TravixError as exc:
+            logger.exception("TravixError in accept_proposal: %s", exc)
             return Failure(exc)
         except Exception as exc:
+            logger.exception("Unexpected exception in accept_proposal: %s", exc)
             return Failure(InfrastructureError("Failed to accept proposal.", cause=exc))
 
         await self._publish(proposal.pop_events(), context="accept_proposal")
+        if itinerary:
+            await self._publish(itinerary.pop_events(), context="populate_itinerary")
         return Success(ProposalSummary.from_aggregate(proposal))
 
     async def reject_proposal(self, command: RejectProposalCommand) -> RejectProposalResult:
@@ -377,3 +451,54 @@ class PlanningService:
                     "reason": str(exc),
                 },
             )
+
+
+def _map_category_to_item_type(category: str | None) -> ItineraryItemType:
+    if not category:
+        return ItineraryItemType.ACTIVITY
+    cat = category.lower()
+    if any(k in cat for k in ("din", "food", "restaur", "meal")):
+        return ItineraryItemType.RESTAURANT
+    if any(k in cat for k in ("trans", "flight", "train", "drive")):
+        return ItineraryItemType.TRANSPORT
+    if any(k in cat for k in ("lodg", "hotel", "stay", "hostel")):
+        return ItineraryItemType.LODGING
+    return ItineraryItemType.ACTIVITY
+
+
+def _parse_cost_to_decimal(cost_str: str | None) -> Decimal | None:
+    if not cost_str:
+        return None
+    cleaned = "".join(c for c in cost_str if c.isdigit() or c == ".")
+    if not cleaned:
+        return None
+    try:
+        val = Decimal(cleaned)
+        return val if val >= Decimal("0") else None
+    except Exception:
+        return None
+
+
+_CURRENCY_SYMBOLS: dict[str, str] = {
+    "₹": "INR",
+    "$": "USD",
+    "€": "EUR",
+    "£": "GBP",
+    "¥": "JPY",
+    "฿": "THB",
+}
+
+
+def _detect_currency(cost_str: str | None, default: str = "INR") -> str:
+    """Infer currency from the cost string symbol; fall back to *default*."""
+    if not cost_str:
+        return default
+    for symbol, code in _CURRENCY_SYMBOLS.items():
+        if symbol in cost_str:
+            return code
+    # Detect 3-letter currency codes like "USD", "INR", "EUR"
+    match = re.search(r"\b([A-Z]{3})\b", cost_str)
+    if match:
+        return match.group(1)
+    return default
+

@@ -96,6 +96,7 @@ class RefreshTokenApplicationService:
         session_id: SessionId,
         user_id: UserId,
         expires_at: datetime,
+        record_id: RefreshTokenId | None = None,
         device_id: str | None = None,
         device_name: str | None = None,
         platform: str | None = None,
@@ -103,15 +104,14 @@ class RefreshTokenApplicationService:
         """
         Issue a new refresh token for a freshly created session.
 
-        Returns (plain_token, record_id). The caller must store record_id
-        as the session's refresh_token_id before persisting the session.
+        Returns (plain_token, record_id).
         """
         plain = self._generator.generate()
         token_hash = self._hasher.hash(plain)
-        record_id = RefreshTokenId.generate()
+        effective_record_id = record_id or RefreshTokenId.generate()
 
         record = RefreshTokenRecord.create(
-            record_id=record_id,
+            record_id=effective_record_id,
             token_hash=token_hash,
             session_id=session_id,
             user_id=user_id,
@@ -126,11 +126,11 @@ class RefreshTokenApplicationService:
             "Refresh token issued",
             extra={
                 "session_id": str(session_id),
-                "record_id": str(record_id),
+                "record_id": str(effective_record_id),
                 "hash_prefix": token_hash.value[:16],
             },
         )
-        return Success((plain, record_id))
+        return Success((plain, effective_record_id))
 
     # ------------------------------------------------------------------ #
     # rotate                                                               #

@@ -40,9 +40,7 @@ class PlanningEngine(Protocol):
     Failures raise ExternalServiceError (from app.shared.domain.errors).
     """
 
-    async def generate_plan(
-        self, preferences: PlanningPreferences
-    ) -> PlanningResult:
+    async def generate_plan(self, preferences: PlanningPreferences) -> PlanningResult:
         """
         Generate a travel plan based on user preferences.
 

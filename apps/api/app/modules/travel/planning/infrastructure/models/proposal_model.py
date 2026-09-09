@@ -134,7 +134,7 @@ class TripProposalModel(
     )
 
     estimated_total_cost: Mapped[str | None] = mapped_column(
-        String(50),
+        String(500),
         nullable=True,
         comment="AI estimated total cost description.",
         sort_order=12,

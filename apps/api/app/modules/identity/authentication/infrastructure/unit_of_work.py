@@ -28,6 +28,10 @@ from __future__ import annotations
 
 import logging
 from types import TracebackType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -75,3 +79,32 @@ class InMemoryUnitOfWork:
         """Mark the unit of work as rolled back. No actual undo for in-memory repos."""
         self.rolled_back = True
         logger.debug("InMemoryUnitOfWork: rolled back (in-memory — no actual undo)")
+
+
+class SQLAlchemyUnitOfWork:
+    """Async SQLAlchemy Unit of Work wrapping an AsyncSession."""
+
+    def __init__(self, session: "AsyncSession") -> None:
+        self._session = session
+
+    async def __aenter__(self) -> "SQLAlchemyUnitOfWork":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        if exc_type is not None:
+            await self.rollback()
+        return False
+
+    async def commit(self) -> None:
+        """Commit the session transaction."""
+        await self._session.commit()
+
+    async def rollback(self) -> None:
+        """Rollback the session transaction."""
+        await self._session.rollback()
+

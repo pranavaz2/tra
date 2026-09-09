@@ -267,3 +267,13 @@ yarn-error.log*
 *.swo
 *~
 .sass-cache/
+
+# =============================================================================
+# JAVASCRIPT / NODE / EXPO / REACT NATIVE
+# =============================================================================
+node_modules/
+.expo/
+dist/
+web-build/
+.npm/
+*.tsbuildinfo
